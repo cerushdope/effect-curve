@@ -1,0 +1,11 @@
+[project]
+name = "effect-curve-backend"
+version = "0.1.0"
+description = "Effect Curve — felt-effect-over-time engine + API"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+# Make `from app...` imports work when running pytest from backend/.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

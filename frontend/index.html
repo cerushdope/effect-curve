@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Effect Curve — felt drug effect over time</title>
+  <meta name="description" content="Graph the felt effect of one or more substances over time." />
+  <link rel="stylesheet" href="/src/styles/app.css" />
+  <script>
+    // Bootstrap: enable the standalone mock when ?mock=1 is present, so the UI
+    // is demoable without the FastAPI backend running.
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search);
+        if (p.get("mock") === "1") window.EFFECT_CURVE_MOCK = true;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#chart-region">Skip to chart</a>
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <h1 class="app-title">
+        <span class="app-title__mark" aria-hidden="true"></span>
+        Effect&nbsp;Curve
+      </h1>
+      <p class="app-tagline">Felt effect over time — a lab notebook for your day.</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Controls column -->
+    <aside class="controls" aria-label="Controls">
+      <div id="search-region" class="controls__search"></div>
+
+      <div id="error-region" class="banner banner--error" role="alert" hidden></div>
+
+      <div id="panel-region" class="controls__panel"></div>
+    </aside>
+
+    <!-- Chart hero -->
+    <section class="hero" aria-label="Effect chart">
+      <div class="hero__bar">
+        <div class="modetoggle" role="group" aria-label="Display mode">
+          <button id="mode-felt" type="button" class="modetoggle__btn is-active" aria-pressed="true">
+            Felt effect
+          </button>
+          <button id="mode-plasma" type="button" class="modetoggle__btn" aria-pressed="false">
+            Plasma level
+          </button>
+        </div>
+        <span id="compute-status" class="hero__status mono" aria-live="polite"></span>
+      </div>
+
+      <div class="hero__chartwrap">
+        <div id="chart-region" class="chart" role="img"
+             aria-label="Line chart of felt effect over time"></div>
+        <div id="empty-region" class="empty" hidden>
+          <p class="empty__head">Add a dose to see the curve</p>
+          <p class="empty__sub mono">Search for a substance, then enter a dose and time.</p>
+        </div>
+      </div>
+
+      <div id="readout-region" class="readout-region"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer mono">
+    <span>Effect Curve · Phase 1 MVP</span>
+    <span>Times shown as clock time · values are illustrative estimates</span>
+  </footer>
+
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>

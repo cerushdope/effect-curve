@@ -1,0 +1,17 @@
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node / dev tooling (Playwright probe lives in tools/)
+node_modules/
+
+# Dev artifacts
+tools/shot-*.png
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

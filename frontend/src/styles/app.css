@@ -1,0 +1,582 @@
+/* app.css — Effect Curve UI.
+ * Aesthetic: "precise instrument meets lab notebook" — clinical but warm.
+ * All color/space from the design tokens in :root. Mono font on every number.
+ */
+
+:root {
+  /* core palette */
+  --paper: #F7F7F4;
+  --ink: #1A1D21;
+  --muted: #6A7078;
+  --hairline: #E4E5E1;
+  --accent: #2E4D54;          /* deep slate-teal */
+
+  /* surfaces derived from paper */
+  --surface: #FFFFFF;
+  --surface-sunk: #F1F1ED;
+  --accent-soft: rgba(46, 77, 84, 0.08);
+  --accent-ring: rgba(46, 77, 84, 0.45);
+
+  /* type */
+  --font-ui: Inter, "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow-card: 0 1px 2px rgba(26, 29, 33, 0.05), 0 1px 1px rgba(26, 29, 33, 0.04);
+
+  --controls-w: 360px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* focus rings — visible and consistent */
+:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: var(--s-2) var(--s-3);
+  z-index: 100;
+  border-radius: 0 0 var(--radius-sm) 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* --------------------------------------------------------------------- */
+/* Header                                                                */
+/* --------------------------------------------------------------------- */
+.app-header {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.app-header__inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-5);
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+.app-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.app-title__mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--accent), #2E8B8B);
+  display: inline-block;
+}
+.app-tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* --------------------------------------------------------------------- */
+/* Layout                                                                */
+/* --------------------------------------------------------------------- */
+.layout {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: var(--s-5);
+  display: grid;
+  grid-template-columns: var(--controls-w) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  position: sticky;
+  top: var(--s-4);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------- */
+/* Search bar                                                            */
+/* --------------------------------------------------------------------- */
+.searchbar__label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: var(--s-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.searchbar__wrap { position: relative; }
+.searchbar__input {
+  width: 100%;
+  padding: 10px var(--s-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+.searchbar__input::placeholder { color: var(--muted); }
+.searchbar__input:focus-visible { border-color: var(--accent); }
+
+.searchbar__list {
+  list-style: none;
+  margin: var(--s-1) 0 0;
+  padding: var(--s-1);
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 6px 20px rgba(26, 29, 33, 0.12);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.searchbar__option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.searchbar__option.is-active,
+.searchbar__option:hover { background: var(--accent-soft); }
+.searchbar__option.is-added { opacity: 0.55; cursor: default; }
+.searchbar__optname { font-weight: 500; }
+.searchbar__optcat {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.searchbar__empty {
+  padding: var(--s-2) var(--s-3);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------- */
+/* Banners (error / status)                                             */
+/* --------------------------------------------------------------------- */
+.banner {
+  padding: var(--s-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+}
+.banner--error {
+  background: #FCEEEC;
+  border-color: #E7C3BC;
+  color: #8A3322;
+}
+
+/* --------------------------------------------------------------------- */
+/* Substance panel + cards                                              */
+/* --------------------------------------------------------------------- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.panel__empty {
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: var(--s-4);
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  margin: 0;
+}
+
+.card {
+  --card-color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--card-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-3) var(--s-4);
+  transition: opacity 0.15s ease;
+}
+.card.is-muted { opacity: 0.55; }
+
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.card__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--card-color);
+  flex: none;
+}
+.card__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+.card__actions { display: flex; gap: var(--s-1); }
+
+.icon-btn {
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.icon-btn:hover { color: var(--ink); border-color: var(--accent); }
+.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.card__mute[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-4);
+  margin: var(--s-3) 0;
+  font-size: 0.78rem;
+}
+.card__facts dt {
+  color: var(--muted);
+  display: inline;
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.68rem;
+}
+.card__facts dd { display: inline; margin: 0; color: var(--ink); }
+.card__facts dt::after { content: ""; }
+
+/* Clean one-line subtitle (formulation · peak · half-life) — replaces the
+   cramped facts grid. */
+.card__sub {
+  margin: 2px 0 var(--s-2);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------- */
+/* Dose rows                                                            */
+/* --------------------------------------------------------------------- */
+.doserows {
+  border-top: 1px dashed var(--hairline);
+  padding-top: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.doserows__head,
+.doserows__row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 32px;
+  gap: var(--s-2);
+  align-items: center;
+}
+.doserows__head {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.doserows__amt,
+.doserows__time {
+  width: 100%;
+  padding: 6px var(--s-2);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+.doserows__amt:focus-visible,
+.doserows__time:focus-visible { border-color: var(--accent); background: var(--surface); }
+.doserows__timewrap { position: relative; display: flex; align-items: center; gap: 6px; }
+.doserows__hint {
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex: none;
+  min-width: 34px;
+}
+.doserows__rm {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 6px;
+  color: var(--muted);
+}
+.doserows__add {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--s-1) 0;
+}
+.doserows__add:hover { text-decoration: underline; }
+
+/* --------------------------------------------------------------------- */
+/* Chart hero                                                           */
+/* --------------------------------------------------------------------- */
+.hero__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.modetoggle {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+.modetoggle__btn {
+  border: none;
+  background: none;
+  padding: 7px var(--s-4);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+.modetoggle__btn + .modetoggle__btn { border-left: 1px solid var(--hairline); }
+.modetoggle__btn.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+.hero__status { font-size: 0.78rem; color: var(--muted); }
+
+.hero__chartwrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  /* fixed height area for the chart hero; no layout shift on data changes */
+  height: clamp(360px, 56vh, 620px);
+  overflow: hidden;
+}
+.chart { position: absolute; inset: 0; }
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  text-align: center;
+  background: var(--surface);
+  pointer-events: none;
+}
+/* Respect the `hidden` attribute — a class selector's `display:flex` otherwise
+   beats the UA `[hidden]{display:none}`, which kept this overlay covering the
+   chart forever (the "graph not showing" bug). */
+.empty[hidden] { display: none; }
+.empty__head { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.empty__sub { margin: 0; color: var(--muted); font-size: 0.82rem; }
+
+/* --------------------------------------------------------------------- */
+/* Readout strip                                                        */
+/* --------------------------------------------------------------------- */
+.readout-region { min-height: 0; }
+.readout {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-3) var(--s-4);
+}
+.readout__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: var(--s-2);
+}
+.readout__headlabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.readout__time { font-size: 0.82rem; color: var(--accent); font-weight: 500; }
+.readout__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+.readout__empty { color: var(--muted); font-size: 0.85rem; margin: 0; }
+
+.readout__row {
+  --row-color: var(--accent);
+  border-left: 3px solid var(--row-color);
+  padding-left: var(--s-3);
+}
+.readout__rowtop {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.readout__dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--row-color); flex: none;
+}
+.readout__name { font-weight: 600; font-size: 0.88rem; flex: 1; min-width: 0; }
+.readout__cur {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.readout__stats {
+  display: flex;
+  flex-wrap: wrap;            /* wrap instead of overflowing into the next box */
+  gap: var(--s-1) var(--s-4);
+  margin: var(--s-2) 0 var(--s-1);
+}
+.readout__stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;        /* keep "PEAK 08:45" together as one unit */
+}
+.readout__stats dt {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin: 0;
+}
+.readout__stats dd { margin: 0; font-size: 0.82rem; }
+.readout__conf { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+.readout__confbadge {
+  font-size: 0.64rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+}
+.readout__confbadge--high { background: #E2F0E6; color: #2C6B41; }
+.readout__confbadge--med  { background: #FBF0DC; color: #876217; }
+.readout__confbadge--low  { background: #F0EEF3; color: #6A6478; }
+.readout__warn {
+  font-size: 0.66rem;
+  color: #8A3322;
+  background: #FCEEEC;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* --------------------------------------------------------------------- */
+/* Footer                                                               */
+/* --------------------------------------------------------------------- */
+.app-footer {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-5) var(--s-6);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+/* --------------------------------------------------------------------- */
+/* Responsive — controls collapse above a full-width chart              */
+/* --------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: var(--s-4);
+    gap: var(--s-4);
+  }
+  .controls {
+    position: static;
+  }
+  .hero__chartwrap {
+    height: clamp(300px, 48vh, 460px);
+  }
+  .app-header__inner { padding: var(--s-3) var(--s-4); }
+}
+
+/* --------------------------------------------------------------------- */
+/* Reduced motion — disable transitions/animations                     */
+/* --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
