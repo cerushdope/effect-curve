@@ -413,6 +413,16 @@ html, body {
 }
 .hero__status { font-size: 0.78rem; color: var(--muted); }
 
+/* Plain-language caption under the chart (axis + dashed-threshold explainer). */
+.hero__legend {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+/* Belt-and-braces: keep the `hidden` attribute authoritative (see .empty). */
+.hero__legend[hidden] { display: none; }
+
 .hero__chartwrap {
   position: relative;
   background: var(--surface);

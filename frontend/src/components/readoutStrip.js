@@ -101,6 +101,7 @@ export function createReadoutStrip(container) {
       const cspan = document.createElement("span");
       cspan.className = `readout__confbadge readout__confbadge--${s.confidence || "low"}`;
       cspan.textContent = `confidence: ${s.confidence || "low"}`;
+      cspan.title = "How well population data supports this curve's shape — not a measure of accuracy for you specifically.";
       conf.append(cspan);
       if (s.breaks_superposition) {
         const warn = document.createElement("span");

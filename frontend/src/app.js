@@ -7,7 +7,7 @@
 
 import { createStore } from "./state.js";
 import { releaseColor } from "./api/contract.js";
-import { computeSeries } from "./engine.js";
+import { computeSeries, NOISE_FLOOR_FRAC } from "./engine.js";
 import { createSearchBar } from "./components/searchBar.js";
 import { renderSubstancePanel } from "./components/substancePanel.js";
 import { createReadoutStrip } from "./components/readoutStrip.js";
@@ -34,6 +34,7 @@ const els = {
   error: document.getElementById("error-region"),
   empty: document.getElementById("empty-region"),
   status: document.getElementById("compute-status"),
+  legend: document.getElementById("chart-legend"),
 };
 
 const store = createStore();
@@ -64,6 +65,18 @@ function showError(msg) {
 
 function setStatus(text) {
   if (els.status) els.status.textContent = text || "";
+}
+
+// Plain-language caption under the chart: explains the axis scale and the
+// dashed threshold line so a non-clinical reader isn't left guessing. Hidden
+// until there's a curve to describe.
+function syncLegend(mode, hasData) {
+  if (!els.legend) return;
+  els.legend.textContent =
+    mode === "plasma"
+      ? "Blood level, relative to a typical dose (about 1.0 at its peak). Dashed line: the level where the effect becomes noticeable."
+      : "Felt effect from 0 (nothing) to 100 (full). Dashed line: the threshold where you start to feel it.";
+  els.legend.hidden = !hasData;
 }
 
 // ---- search + panel ------------------------------------------------------- //
@@ -118,8 +131,10 @@ function windowStartFor(state) {
 }
 
 // Last grid minute where any visible felt curve is still meaningfully above
-// baseline (>3% of its own peak). This sizes the window from the ACTUAL computed
-// curve, not a static landmark, so long-acting drugs don't get clipped.
+// baseline (above NOISE_FLOOR_FRAC of its own peak). This sizes the window from
+// the ACTUAL computed curve, not a static landmark, so long-acting drugs don't
+// get clipped. Uses the SAME threshold as the offset landmark (engine.js) so the
+// two never disagree — see NOISE_FLOOR_FRAC.
 function activeEndMin(probe) {
   const g = probe.grid_min;
   if (!g.length) return 0;
@@ -128,7 +143,7 @@ function activeEndMin(probe) {
     if (s.muted) continue;
     let peak = 0;
     for (const v of s.felt_effect) if (v > peak) peak = v;
-    const cut = Math.max(1, 0.03 * peak);
+    const cut = Math.max(1, NOISE_FLOOR_FRAC * peak);
     for (let i = g.length - 1; i > lastIdx; i--) {
       if (s.felt_effect[i] > cut) { lastIdx = i; break; }
     }
@@ -205,10 +220,9 @@ store.subscribe((state) => {
   // immediate UI render
   renderSubstancePanel(els.panel, state, store, { onRemove: removeSubstance, stepMin: state.window.step_min });
   syncModeButtons(state.mode);
-  if (els.empty) {
-    const hasDose = state.substances.some((s) => s.doses.length > 0);
-    els.empty.hidden = state.substances.length > 0 && hasDose;
-  }
+  const hasCurve = state.substances.length > 0 && state.substances.some((s) => s.doses.length > 0);
+  if (els.empty) els.empty.hidden = hasCurve;
+  syncLegend(state.mode, hasCurve);
   // debounced recompute
   scheduleRecompute(state);
 });
@@ -223,3 +237,4 @@ reducedMotionMQ.addEventListener?.("change", () => {
 renderSubstancePanel(els.panel, store.getState(), store, { onRemove: removeSubstance });
 syncModeButtons("felt");
 if (els.empty) els.empty.hidden = false;
+syncLegend("felt", false);

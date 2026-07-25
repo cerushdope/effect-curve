@@ -291,7 +291,7 @@ export function createEffectChart(container, options = {}) {
     ctx.font = '10px ' + FONT_UI;
     ctx.fillStyle = TOKENS.muted;
     ctx.fillText(
-      mode === 'plasma' ? 'relative plasma' : 'relative effect',
+      mode === 'plasma' ? 'blood level' : 'felt effect',
       0,
       0
     );

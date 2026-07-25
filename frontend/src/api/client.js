@@ -1,26 +1,35 @@
-// client.js — async API client for the FastAPI backend.
-// Same-origin base URL ("" => relative). On network failure, if
-// window.EFFECT_CURVE_MOCK is true, transparently fall back to ./mock.js so the
-// UI is demoable standalone.
+// client.js — data client backed by Supabase (hosted Postgres + auto REST API).
+//
+// The frontend talks DIRECTLY to Supabase; there is no app server to run. The
+// publishable key below is safe to ship in client code: a row-level-security
+// policy makes the data read-only (see the SQL in the project README/setup).
+// All curve math still runs in the browser (engine.js); Supabase only stores
+// and searches the substance PARAMETERS.
+//
+// If window.EFFECT_CURVE_MOCK is true (?mock=1), we transparently use ./mock.js
+// so the UI is demoable with no network at all.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /** @typedef {import("./contract.js").SubstanceSummary} SubstanceSummary */
 /** @typedef {import("./contract.js").Substance} Substance */
-/** @typedef {import("./contract.js").ComputeRequest} ComputeRequest */
-/** @typedef {import("./contract.js").ComputeResponse} ComputeResponse */
 
-const BASE = ""; // same origin
+const SUPABASE_URL = "https://qzjvwxuwghegkfxmmseh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_SVnNGLJnxTy2-nz0nOYDMw_9sgAg6UH";
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---- optional standalone mock (?mock=1) ----------------------------------- //
 let _mockModule = null;
 async function mock() {
   if (!_mockModule) _mockModule = await import("./mock.js");
   return _mockModule;
 }
-
 function mockEnabled() {
   return typeof window !== "undefined" && window.EFFECT_CURVE_MOCK === true;
 }
 
-/** A network/server error the UI can surface with a "what to do" message. */
+/** A data-layer error the UI can surface with a "what to do" message. */
 export class ApiError extends Error {
   constructor(message, { status = 0, cause = null } = {}) {
     super(message);
@@ -30,82 +39,31 @@ export class ApiError extends Error {
   }
 }
 
-async function getJSON(path) {
-  let res;
-  try {
-    res = await fetch(BASE + path, { headers: { Accept: "application/json" } });
-  } catch (e) {
-    throw new ApiError("network", { cause: e });
-  }
-  if (!res.ok) {
-    throw new ApiError(`HTTP ${res.status}`, { status: res.status });
-  }
-  return res.json();
-}
-
-async function postJSON(path, body) {
-  let res;
-  try {
-    res = await fetch(BASE + path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    throw new ApiError("network", { cause: e });
-  }
-  if (!res.ok) {
-    throw new ApiError(`HTTP ${res.status}`, { status: res.status });
-  }
-  return res.json();
-}
-
 /**
- * Search / autocomplete over name + aliases.
+ * Search / autocomplete over name + aliases (fuzzy, via the search_substances
+ * SQL function). An empty query returns a default list of suggestions.
  * @param {string} q
  * @returns {Promise<SubstanceSummary[]>}
  */
 export async function search(q) {
-  const path = `/api/substances?q=${encodeURIComponent(q || "")}`;
-  try {
-    return await getJSON(path);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 0 && mockEnabled()) {
-      return (await mock()).search(q);
-    }
-    throw e;
-  }
+  if (mockEnabled()) return (await mock()).search(q);
+  const { data, error } = await supabase.rpc("search_substances", { q: q || "" });
+  if (error) throw new ApiError(error.message, { cause: error });
+  return data || [];
 }
 
 /**
- * Full Substance record.
+ * Full Substance record (the nested params the engine reads), stored as JSONB.
  * @param {string} id
  * @returns {Promise<Substance>}
  */
 export async function getSubstance(id) {
-  const path = `/api/substances/${encodeURIComponent(id)}`;
-  try {
-    return await getJSON(path);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 0 && mockEnabled()) {
-      return (await mock()).getSubstance(id);
-    }
-    throw e;
-  }
-}
-
-/**
- * The draw call.
- * @param {ComputeRequest} payload
- * @returns {Promise<ComputeResponse>}
- */
-export async function compute(payload) {
-  try {
-    return await postJSON("/api/compute", payload);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 0 && mockEnabled()) {
-      return (await mock()).compute(payload);
-    }
-    throw e;
-  }
+  if (mockEnabled()) return (await mock()).getSubstance(id);
+  const { data, error } = await supabase
+    .from("substances")
+    .select("record")
+    .eq("id", id)
+    .single();
+  if (error) throw new ApiError(error.message, { cause: error });
+  return data.record;
 }

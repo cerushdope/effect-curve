@@ -13,6 +13,20 @@ const round3 = (v) => Math.round(v * 1000) / 1000;
 
 const keFromHalfLife = (hl) => LN2 / hl;
 
+// Fraction of a substance's OWN peak below which the felt effect is treated as
+// "faded to noise". This one number is the shared source of truth for BOTH the
+// offset landmark (below, in engine) AND the window auto-fit (in app.js). They
+// used to hardcode different values (0.5 absolute vs 0.03 of peak); when a peak
+// exceeded ~17 the window ended before the felt curve ever dropped to 0.5, so
+// the offset crossing fell off the end of the grid and rendered as "—".
+// Keeping them tied to one constant makes that class of bug impossible. The
+// value is higher than the old 0.03 on purpose: for a "felt effect" view, the
+// long sub-perceptual tail below ~10% of peak isn't really felt, so trimming it
+// keeps the axis tight — which gives the onset horizontal room instead of a
+// vertical wall, and keeps a typical morning dose's offset on the same day
+// rather than spilling past midnight into an ambiguous "00:10".
+export const NOISE_FLOOR_FRAC = 0.1;
+
 // ---- ka from Tmax: solve Tmax = ln(ka/ke)/(ka-ke) (bisection) -------------- //
 function tmaxOfKa(ka, ke) {
   if (Math.abs(ka - ke) < 1e-12) return 1 / ke; // ka -> ke limit
@@ -193,10 +207,14 @@ function landmarksOf(grid, felt) {
   if (!felt.length) return lm;
   let pk = 0;
   for (let i = 1; i < felt.length; i++) if (felt[i] > felt[pk]) pk = i;
-  for (let i = 0; i < felt.length; i++) if (felt[i] > 0.5) { lm.onset_min = grid[i]; break; }
+  // Onset/offset = the times the curve enters/leaves the "clearly felt" band,
+  // set at NOISE_FLOOR_FRAC of this substance's own peak. Because the window is
+  // sized with the same fraction, the offset crossing is always inside the grid.
+  const cut = Math.max(1, NOISE_FLOOR_FRAC * felt[pk]);
+  for (let i = 0; i <= pk; i++) if (felt[i] >= cut) { lm.onset_min = grid[i]; break; }
   lm.peak_min = grid[pk];
   lm.peak_value = round3(felt[pk]);
-  for (let i = pk; i < felt.length; i++) if (felt[i] < 0.5) { lm.offset_min = grid[i]; break; }
+  for (let i = pk; i < felt.length; i++) if (felt[i] < cut) { lm.offset_min = grid[i]; break; }
   return lm;
 }
 
