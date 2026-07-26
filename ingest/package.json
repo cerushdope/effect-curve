@@ -1,0 +1,15 @@
+{
+  "name": "effect-curve-ingest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Automated substance ingestion: RxNorm + openFDA + Wikidata -> Supabase.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "ingest": "node run.js",
+    "smoke": "node run.js --dry-run --limit 200 --max-partitions 1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0"
+  }
+}

@@ -15,3 +15,7 @@ tools/shot-*.png
 Thumbs.db
 .vscode/
 .idea/
+
+# Ingest job artifacts
+ingest/build/
+ingest/.cache/

@@ -562,6 +562,21 @@ html, body {
   font-size: 0.72rem;
 }
 
+/* Source attribution — required by NLM's terms of use. Sits on its own row
+   below the two status spans, quieter than them but still legible. */
+.app-footer .attribution {
+  flex-basis: 100%;
+  max-width: 78ch;
+  line-height: 1.5;
+  font-size: 0.66rem;
+  opacity: 0.75;
+}
+.app-footer .attribution a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* --------------------------------------------------------------------- */
 /* Responsive — controls collapse above a full-width chart              */
 /* --------------------------------------------------------------------- */

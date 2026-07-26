@@ -1,0 +1,88 @@
+name: Ingest substances
+
+# Two triggers:
+#   workflow_dispatch — the "Run workflow" button in the Actions tab. This is
+#                       the run-on-demand path; works from any browser.
+#   schedule          — monthly. openFDA re-exports weekly-ish, RxNorm monthly,
+#                       so more often than this mostly re-downloads the same data.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and validate only — do not write to Supabase"
+        type: boolean
+        default: false
+      limit:
+        description: "Cap ingredients processed (blank = all). Use for a quick test."
+        type: string
+        default: ""
+      prune:
+        description: "Delete rows this run did not produce (removes the dummy archetypes)"
+        type: boolean
+        default: false
+      no_llm:
+        description: "Skip the LLM residual pass"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 4 1 * *" # 04:00 UTC on the 1st of each month
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: ingest
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Run ingestion
+        working-directory: ingest
+        env:
+          # Never committed — read from the repo's encrypted Actions secrets.
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          INGEST_CACHE_DIR: ${{ runner.temp }}/effect-curve-ingest
+        run: |
+          ARGS=""
+          [ "${{ inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
+          [ "${{ inputs.prune }}"   = "true" ] && ARGS="$ARGS --prune"
+          [ "${{ inputs.no_llm }}"  = "true" ] && ARGS="$ARGS --no-llm"
+          [ -n "${{ inputs.limit }}" ] && ARGS="$ARGS --limit ${{ inputs.limit }}"
+          echo "node run.js $ARGS"
+          node run.js $ARGS | tee ingest.log
+
+      - name: Job summary
+        if: always()
+        working-directory: ingest
+        run: |
+          {
+            echo "## Ingestion run"
+            echo '```'
+            tail -n 40 ingest.log 2>/dev/null || echo "(no log — the job failed early)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload built records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: substances-json
+          path: ingest/build/substances.json
+          if-no-files-found: warn
+          retention-days: 14
