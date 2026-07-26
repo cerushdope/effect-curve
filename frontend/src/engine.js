@@ -32,19 +32,31 @@ function tmaxOfKa(ka, ke) {
   if (Math.abs(ka - ke) < 1e-12) return 1 / ke; // ka -> ke limit
   return Math.log(ka / ke) / (ka - ke);
 }
+// tmaxOfKa DECREASES monotonically as ka rises — on both sides of ka == ke.
+// ka > ke is the ordinary case. ka < ke is flip-flop kinetics: absorption is
+// slower than elimination, so absorption rate-limits the tail. Real drugs do
+// this, and Tmax > 1/ke is exactly how it shows up in the numbers.
+//
+// This used to branch on a `decreasing` flag and invert the comparison for the
+// ka < ke case. Because the function is decreasing on BOTH branches, that drove
+// the bisection to the bottom of its bracket instead of the root: ka came back
+// at ke*1e-4, i.e. an absorption half-life of ~833 days, and the curve rose to
+// a plateau and never came down. None of the 12 dummy archetypes had
+// Tmax > 1/ke, so it stayed invisible until real substances arrived.
 function deriveKa(tmax, ke) {
   if (!(tmax > 0)) return ke * 1e4;
   const limit = 1 / ke;
   if (Math.abs(tmax - limit) < 1e-9) return ke;
-  let lo, hi, decreasing;
-  if (tmax < limit) { lo = ke; hi = ke * 1e4; decreasing = true; }
-  else { lo = ke * 1e-4; hi = ke; decreasing = false; }
+
+  let lo, hi;
+  if (tmax < limit) { lo = ke; hi = ke * 1e4; } // fast absorption
+  else { lo = ke * 1e-4; hi = ke; }             // flip-flop
   for (let i = 0; i < 200; i++) {
     const mid = 0.5 * (lo + hi);
-    const t = tmaxOfKa(mid, ke);
-    if (decreasing) { if (t > tmax) lo = mid; else hi = mid; }
-    else { if (t > tmax) hi = mid; else lo = mid; }
-    if (Math.abs(hi - lo) < 1e-12) break;
+    // Too slow a peak means ka is too small — move the floor up.
+    if (tmaxOfKa(mid, ke) > tmax) lo = mid;
+    else hi = mid;
+    if (Math.abs(hi - lo) < 1e-15) break;
   }
   return 0.5 * (lo + hi);
 }

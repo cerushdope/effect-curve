@@ -45,6 +45,49 @@ function doseStats(strengthsMg) {
   };
 }
 
+/** Counts how many records needed repairing, for the run summary. */
+export const pkRepairs = { inconsistent: 0, absurdHalfLife: 0 };
+
+/**
+ * Reject an extracted (Tmax, half-life) pair that cannot describe a real oral
+ * drug, before it reaches the curve.
+ *
+ * For one-compartment first-order kinetics the peak occurs at
+ *   Tmax = ln(ka/ke)/(ka - ke),
+ * which for ka > ke is bounded above by 1/ke = half_life / ln2. A pair that
+ * violates that bound implies absorption slower than elimination (flip-flop) —
+ * genuinely real for depot injections and some XR forms, but for a plain oral
+ * drug it almost always means one of the two numbers was mis-read.
+ *
+ * Amphetamine came out of the labels at Tmax 225 min with a 120 min half-life:
+ * 1/ke is 173 min, so the pair is impossible. Tmax was right (~3.8 h) and the
+ * half-life was wrong (real is ~10-13 h). That is the usual direction — a Tmax
+ * sentence is normally unambiguous, while a half-life sentence can easily pick
+ * up a distribution or absorption phase instead of the terminal one. So keep
+ * Tmax and drop the half-life back to the class default.
+ */
+function plausiblePk(pk, family) {
+  const LN2 = Math.log(2);
+  let tmax = pk?.tmax_min ?? null;
+  let halfLife = pk?.half_life_min ?? null;
+
+  // Nothing on Earth is felt on a 30-day curve in this app; treat it as a unit
+  // mis-read (days parsed where hours were meant) rather than a real value.
+  if (halfLife != null && halfLife > 20160) {
+    halfLife = null;
+    pkRepairs.absurdHalfLife++;
+  }
+
+  if (tmax != null && halfLife != null && !family.startsWith("patch")) {
+    const peakBound = halfLife / LN2; // = 1/ke
+    if (tmax > peakBound) {
+      halfLife = null; // fall back to the class default
+      pkRepairs.inconsistent++;
+    }
+  }
+  return { tmax, halfLife };
+}
+
 /**
  * Build one route's PK components from the measured/def­aulted Tmax + half-life.
  * Prodrugs get a two-component cascade: an inactive parent feeding a long-lived
@@ -146,10 +189,7 @@ export function buildRecord({ ingredient, displayName, ndc, wd, pk, rxcui }) {
   if (!families.length) return null; // topical/ophthalmic only — no felt curve
 
   const dose = doseStats(ndc ? ndc.strengthsMg : []);
-  const measured = {
-    tmax: pk?.tmax_min ?? null,
-    halfLife: pk?.half_life_min ?? null,
-  };
+  const measured = plausiblePk(pk, families[0]);
 
   const routes = families.map((family) => {
     const d = ROUTE_DEFAULTS[family];

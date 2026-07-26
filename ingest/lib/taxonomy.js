@@ -117,26 +117,40 @@ export const ROUTE_DEFAULTS = {
 /**
  * PD shape per category. `threshold` is the fraction of the reference peak
  * below which the effect reads as "not felt"; ec50/hill_n set the steepness.
+ *
+ * CALIBRATION NOTE. These were originally set around 0.08-0.12, which is about
+ * right for a PLASMA curve and much too low for a FELT one. At threshold 0.08,
+ * lisdexamfetamine still read as ~26% felt a full 24 h after the dose, because
+ * a quarter of peak plasma is a quarter of peak plasma — but nobody reports
+ * feeling a quarter of their Vyvanse the next morning. Real felt duration is
+ * ~13 h.
+ *
+ * Raising the threshold to ~0.2 and steepening hill_n pulls the tail in without
+ * touching the peak: same shape while the drug is working, then it lets go.
+ * Cross-checked against lisdexamfetamine (~14 h felt) and amphetamine IR.
+ *
+ * These are judgement calls about a subjective quantity, not measurements —
+ * which is exactly why every record ships confidence "low".
  */
 const PD_BY_CATEGORY = {
-  stimulant: { threshold: 0.08, ec50: 0.4, hill_n: 1.5 },
-  analgesic: { threshold: 0.1, ec50: 0.45, hill_n: 1.3 },
-  sedative: { threshold: 0.12, ec50: 0.45, hill_n: 1.4 },
-  anxiolytic: { threshold: 0.12, ec50: 0.45, hill_n: 1.4 },
-  anesthetic: { threshold: 0.06, ec50: 0.35, hill_n: 1.6 },
-  antipsychotic: { threshold: 0.15, ec50: 0.5, hill_n: 1.2 },
+  stimulant: { threshold: 0.2, ec50: 0.4, hill_n: 2.0 },
+  analgesic: { threshold: 0.18, ec50: 0.45, hill_n: 1.8 },
+  sedative: { threshold: 0.2, ec50: 0.45, hill_n: 1.9 },
+  anxiolytic: { threshold: 0.2, ec50: 0.45, hill_n: 1.9 },
+  anesthetic: { threshold: 0.15, ec50: 0.35, hill_n: 2.1 },
+  antipsychotic: { threshold: 0.22, ec50: 0.5, hill_n: 1.6 },
   // Chronic-onset classes: little is felt from a single acute dose, so the
-  // threshold sits high on purpose.
-  antidepressant: { threshold: 0.2, ec50: 0.55, hill_n: 1.1 },
-  anticonvulsant: { threshold: 0.18, ec50: 0.5, hill_n: 1.1 },
-  cardiovascular: { threshold: 0.12, ec50: 0.5, hill_n: 1.2 },
-  bronchodilator: { threshold: 0.07, ec50: 0.4, hill_n: 1.4 },
-  antihistamine: { threshold: 0.12, ec50: 0.45, hill_n: 1.3 },
-  supplement: { threshold: 0.15, ec50: 0.45, hill_n: 1.3 },
-  dependence: { threshold: 0.1, ec50: 0.45, hill_n: 1.3 },
+  // threshold sits higher still on purpose.
+  antidepressant: { threshold: 0.28, ec50: 0.55, hill_n: 1.3 },
+  anticonvulsant: { threshold: 0.25, ec50: 0.5, hill_n: 1.4 },
+  cardiovascular: { threshold: 0.2, ec50: 0.5, hill_n: 1.5 },
+  bronchodilator: { threshold: 0.15, ec50: 0.4, hill_n: 2.0 },
+  antihistamine: { threshold: 0.2, ec50: 0.45, hill_n: 1.8 },
+  supplement: { threshold: 0.22, ec50: 0.45, hill_n: 1.7 },
+  dependence: { threshold: 0.18, ec50: 0.45, hill_n: 1.8 },
 };
 
 export function pdModel(category) {
-  const base = PD_BY_CATEGORY[category] || { threshold: 0.1, ec50: 0.45, hill_n: 1.3 };
+  const base = PD_BY_CATEGORY[category] || { threshold: 0.18, ec50: 0.45, hill_n: 1.7 };
   return { ...base, emax: 100.0, mechanism: "direct", extras: {} };
 }

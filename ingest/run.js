@@ -25,7 +25,7 @@ import { loadIngredients, NLM_ATTRIBUTION } from "./lib/rxnorm.js";
 import { loadWikidata } from "./lib/wikidata.js";
 import { loadNdc, loadLabelPk, ensureCacheDir, OPENFDA_ATTRIBUTION } from "./lib/openfda.js";
 import { resolveWithLlm } from "./lib/llm.js";
-import { buildRecord } from "./lib/record.js";
+import { buildRecord, pkRepairs } from "./lib/record.js";
 import { preflight, upsertSubstances, listExistingIds, deleteSubstances } from "./lib/supabase.js";
 import { stripSalt, normalise, titleCase } from "./lib/aliases.js";
 
@@ -279,6 +279,8 @@ function summary(rows, stats) {
   console.log(`rows        ${rows.length}`);
   console.log(`aliases     ${rows.reduce((n, r) => n + r.aliases.length, 0)}`);
   console.log(`pk source   regex ${stats.regex} | llm ${stats.llm} | class-default ${stats.defaults}`);
+  console.log(`pk repairs  ${pkRepairs.inconsistent} impossible Tmax/half-life pairs, ` +
+    `${pkRepairs.absurdHalfLife} absurd half-lives -> class default`);
   console.log(`categories  ${top.map(([c, n]) => `${c}:${n}`).join("  ")}`);
   console.log(`\n${NLM_ATTRIBUTION}\n${OPENFDA_ATTRIBUTION}\nSubstance names and classifications from Wikidata (CC0).`);
 }
