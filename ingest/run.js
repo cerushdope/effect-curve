@@ -81,6 +81,17 @@ const log = (msg) => {
 // ---- main ----------------------------------------------------------------- //
 async function main() {
   const opts = parseArgs(process.argv);
+
+  // Fail before the downloads, not after. A missing key used to surface ~2
+  // minutes in, at the upsert, having already pulled 1.7 GB of label data.
+  if (!opts.dryRun && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is not set, and this is not a --dry-run.\n" +
+        "  In CI: add it as a REPOSITORY secret (Settings > Secrets and variables >\n" +
+        "  Actions > Secrets tab). An *environment* secret will not reach this job,\n" +
+        "  because the workflow does not declare an `environment:`."
+    );
+  }
   // Deliberately outside the repo: the project lives in a OneDrive folder, and
   // a multi-hundred-MB cache inside it would be sync'd to the cloud.
   const cacheDir = await ensureCacheDir(
