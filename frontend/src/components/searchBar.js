@@ -7,6 +7,7 @@
 
 import * as client from "../api/client.js";
 import { colorForSubstance } from "../api/contract.js";
+import { brandLabels } from "../aliasLabels.js";
 
 const DEBOUNCE_MS = 250;
 
@@ -54,6 +55,8 @@ export function createSearchBar(container, store, onError = () => {}) {
   let active = -1;
   let debounceTimer = null;
   let reqSeq = 0;
+  // The query that produced `results`, so render() can show which alias matched.
+  let lastQuery = "";
 
   function close() {
     list.hidden = true;
@@ -85,13 +88,34 @@ export function createSearchBar(container, store, onError = () => {}) {
       const already = store.hasSubstance(r.id);
       if (already) li.classList.add("is-added");
 
+      const main = document.createElement("span");
+      main.className = "searchbar__optmain";
+
       const name = document.createElement("span");
       name.className = "searchbar__optname";
       name.textContent = r.name;
       const cat = document.createElement("span");
       cat.className = "searchbar__optcat mono";
       cat.textContent = already ? "added" : r.category;
-      li.append(name, cat);
+      main.append(name, cat);
+      li.append(main);
+
+      // Searching "vyvanse" and seeing only "Lisdexamfetamine" looks like the
+      // wrong drug. Show the brand names, with the one that matched first.
+      const { matched, brands } = brandLabels(r.aliases, r.name, lastQuery);
+      if (brands.length) {
+        const alt = document.createElement("span");
+        alt.className = "searchbar__optalias";
+        brands.forEach((b, n) => {
+          if (n) alt.append(document.createTextNode(" · "));
+          const tag = document.createElement("span");
+          // The matched term gets emphasis — it's the answer to "why this row?".
+          if (matched && b === matched) tag.className = "is-match";
+          tag.textContent = b;
+          alt.append(tag);
+        });
+        li.append(alt);
+      }
 
       li.addEventListener("mousedown", (e) => {
         e.preventDefault(); // keep focus in input
@@ -110,6 +134,7 @@ export function createSearchBar(container, store, onError = () => {}) {
     const my = ++reqSeq;
     try {
       const res = await client.search(q);
+      lastQuery = q;
       if (my !== reqSeq) return; // stale
       results = res;
       active = res.length ? 0 : -1;

@@ -3,6 +3,7 @@
 // Shows: name, tiny PK facts (Tmax, half-life, formulation), a mute toggle,
 // a remove button, and the dose rows for the substance.
 
+import { brandLabels } from "../aliasLabels.js";
 import { renderDoseRows } from "./doseRows.js";
 
 /**
@@ -75,11 +76,25 @@ export function renderSubstancePanel(container, state, store, opts = {}) {
     facts.className = "card__sub";
     facts.textContent = bits.join(" · ");
 
+    // Brand names. The card titles the generic (one substance, one curve), so
+    // without this someone who added "Vyvanse" has no confirmation they got it.
+    const { brands } = brandLabels(sub.facts?.aliases, sub.name, "", 6);
+    let alsoEl = null;
+    if (brands.length) {
+      alsoEl = document.createElement("p");
+      alsoEl.className = "card__aliases";
+      const lead = document.createElement("span");
+      lead.className = "card__aliases-lead";
+      lead.textContent = "also ";
+      alsoEl.append(lead, document.createTextNode(brands.join(" · ")));
+      alsoEl.title = `Brand names for ${sub.name}`;
+    }
+
     // dose rows
     const dr = document.createElement("div");
     dr.className = "card__doses";
 
-    card.append(head, facts, dr);
+    card.append(head, facts, ...(alsoEl ? [alsoEl] : []), dr);
     container.append(card);
 
     renderDoseRows(dr, sub, store, { stepMin: opts.stepMin || 5 });

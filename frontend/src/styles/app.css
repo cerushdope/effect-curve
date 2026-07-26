@@ -184,13 +184,35 @@ html, body {
   overflow-y: auto;
 }
 .searchbar__option {
+  /* Two rows now: name+category, then the brand names that matched. */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.searchbar__optmain {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  border-radius: 4px;
-  cursor: pointer;
+}
+/* Brand names under the generic. Kept on one line - if a drug has a dozen
+   brands the row must not grow tall enough to push the rest of the list
+   off-screen. */
+.searchbar__optalias {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The term the user actually typed, so the reason for the match is obvious. */
+.searchbar__optalias .is-match {
+  color: var(--accent);
+  font-weight: 600;
 }
 .searchbar__option.is-active,
 .searchbar__option:hover { background: var(--accent-soft); }
@@ -318,6 +340,22 @@ html, body {
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.4;
+}
+
+/* Brand names on the active-substance card. The card is titled with the
+   generic, so this is the user's confirmation that "Vyvanse" got them the
+   right row. Wraps freely here - vertical space is cheaper in the panel. */
+.card__aliases {
+  margin: 0 0 var(--s-2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+.card__aliases-lead {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.64rem;
+  opacity: 0.8;
 }
 
 /* --------------------------------------------------------------------- */
