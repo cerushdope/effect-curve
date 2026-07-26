@@ -122,9 +122,28 @@ export async function loadLabelPk(cacheDir, log = () => {}, { maxPartitions = In
   const best = new Map(); // substance -> {pk, score}
   let labels = 0;
 
+  // Download the NEXT partition while parsing the current one. Downloading and
+  // stream-parsing use different resources (network vs CPU), and running them
+  // strictly in series left each idle for half the time. Peak disk becomes two
+  // partitions (~280 MB) instead of one, which is still nothing.
+  const destOf = (u) => path.join(cacheDir, path.basename(u));
+  // The no-op .catch marks the rejection as handled so an in-flight failure
+  // can't surface as an unhandledRejection if the loop exits before awaiting
+  // it. The original promise still rejects at the await, so errors aren't lost.
+  const start = (u) => {
+    const p = download(u, destOf(u));
+    p.catch(() => {});
+    return p;
+  };
+  let inFlight = use.length ? start(use[0]) : null;
+
   for (const [i, url] of use.entries()) {
-    const dest = path.join(cacheDir, path.basename(url));
-    const { bytes, cached } = await download(url, dest);
+    const dest = destOf(url);
+    const { bytes, cached } = await inFlight;
+
+    // Kick off the next fetch before we start parsing this one.
+    inFlight = i + 1 < use.length ? start(use[i + 1]) : null;
+
     log(
       `  label ${i + 1}/${use.length} ${path.basename(url)} ` +
         `${(bytes / 1e6).toFixed(0)} MB${cached ? " (cached)" : ""}`
