@@ -26,7 +26,7 @@ import { loadWikidata } from "./lib/wikidata.js";
 import { loadNdc, loadLabelPk, ensureCacheDir, OPENFDA_ATTRIBUTION } from "./lib/openfda.js";
 import { resolveWithLlm } from "./lib/llm.js";
 import { buildRecord } from "./lib/record.js";
-import { upsertSubstances, listExistingIds, deleteSubstances } from "./lib/supabase.js";
+import { preflight, upsertSubstances, listExistingIds, deleteSubstances } from "./lib/supabase.js";
 import { stripSalt, normalise, titleCase } from "./lib/aliases.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -82,15 +82,20 @@ const log = (msg) => {
 async function main() {
   const opts = parseArgs(process.argv);
 
-  // Fail before the downloads, not after. A missing key used to surface ~2
-  // minutes in, at the upsert, having already pulled 1.7 GB of label data.
-  if (!opts.dryRun && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not set, and this is not a --dry-run.\n" +
-        "  In CI: add it as a REPOSITORY secret (Settings > Secrets and variables >\n" +
-        "  Actions > Secrets tab). An *environment* secret will not reach this job,\n" +
-        "  because the workflow does not declare an `environment:`."
-    );
+  // Fail before the downloads, not after. Presence of the key is not enough —
+  // a key can be set and correct and still lack the GRANTs needed to write, so
+  // actually round-trip a write here rather than just checking the env var.
+  if (!opts.dryRun) {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error(
+        "SUPABASE_SERVICE_ROLE_KEY is not set, and this is not a --dry-run.\n" +
+          "  In CI: add it as a REPOSITORY secret (Settings > Secrets and variables >\n" +
+          "  Actions > Secrets tab). An *environment* secret will not reach this job,\n" +
+          "  because the workflow does not declare an `environment:`."
+      );
+    }
+    log("preflight: checking write access…");
+    await preflight(log);
   }
   // Deliberately outside the repo: the project lives in a OneDrive folder, and
   // a multi-hundred-MB cache inside it would be sync'd to the cloud.

@@ -51,8 +51,7 @@ as $$
   limit 25;
 $$;
 
--- Row-level security: public read only. The ingest job writes with the
--- service_role key, which bypasses RLS.
+-- Row-level security: public read only.
 alter table public.substances enable row level security;
 
 drop policy if exists "public read" on public.substances;
@@ -60,3 +59,13 @@ create policy "public read" on public.substances for select to anon using (true)
 
 grant select on table public.substances to anon;
 grant execute on function public.search_substances(text) to anon;
+
+-- The ingest job writes as service_role (the `sb_secret_…` / legacy
+-- service_role key maps to it).
+--
+-- service_role bypasses ROW-LEVEL SECURITY but NOT table GRANTs — those are two
+-- separate permission systems, and skipping this block is a 403 at upsert time:
+--   42501 "permission denied for table substances"
+-- Supabase normally applies these via default privileges; a table created
+-- outside that path (e.g. pasted into the SQL editor) does not get them.
+grant select, insert, update, delete on table public.substances to service_role;

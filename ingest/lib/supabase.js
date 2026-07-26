@@ -21,6 +21,63 @@ function config() {
 }
 
 /**
+ * Prove we can actually WRITE, before spending two minutes downloading.
+ *
+ * Checking that the key is merely *present* is not enough — that check passes
+ * happily while the grants are missing, and you only find out at the upsert.
+ * So round-trip a sentinel row: insert it, delete it. Runs in ~200 ms.
+ */
+export async function preflight(log = () => {}) {
+  const { url, key } = config();
+  const headers = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    "Content-Type": "application/json",
+  };
+  const probe = {
+    id: "__ingest_preflight__",
+    name: "preflight probe",
+    category: "internal",
+    aliases: [],
+    unit: "mg",
+    confidence: "low",
+    record: { preflight: true },
+  };
+
+  const res = await fetch(`${url}/rest/v1/substances`, {
+    method: "POST",
+    headers: { ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([probe]),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    let hint = "";
+    if (res.status === 403 || body.includes("42501")) {
+      hint =
+        "\n  The key is valid but the role lacks table privileges. service_role\n" +
+        "  bypasses row-level security but still needs GRANTs. In the Supabase\n" +
+        "  SQL editor run:\n\n" +
+        "    grant select, insert, update, delete on table public.substances to service_role;\n";
+    } else if (res.status === 401) {
+      hint =
+        "\n  The key was rejected. Check you used the SECRET key (sb_secret_… or the\n" +
+        "  legacy service_role JWT), not the publishable one — they sit next to each\n" +
+        "  other in Settings > API Keys, and the publishable key cannot write.\n";
+    }
+    throw new Error(`Supabase preflight write failed (HTTP ${res.status}): ${body.slice(0, 300)}${hint}`);
+  }
+
+  // Clean up. A leftover probe row is cosmetic, so warn rather than fail.
+  const del = await fetch(`${url}/rest/v1/substances?id=eq.__ingest_preflight__`, {
+    method: "DELETE",
+    headers: { ...headers, Prefer: "return=minimal" },
+  });
+  if (!del.ok) log("  preflight: probe row could not be deleted — remove __ingest_preflight__ by hand");
+  log("  preflight: write access confirmed");
+}
+
+/**
  * Upsert substance rows, keyed on `id`.
  * @param {object[]} rows
  * @param {Function} [log]
