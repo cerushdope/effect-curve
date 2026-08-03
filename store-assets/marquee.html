@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+html,body{width:1400px;height:560px}
+body{display:flex;align-items:center;padding:0 90px;gap:70px}
+.left{width:52%}
+.right{width:48%}
+h1{font-size:62px;margin:26px 0 20px}
+.sub{font-size:22px;max-width:520px}
+.wash{width:900px;height:900px;top:-330px;right:-260px}
+.card{padding:26px 28px}
+.row{display:flex;gap:26px;margin-top:20px}
+</style></head><body>
+<div class="wash"></div>
+<div class="left">
+  <div class="brand"><div class="brand-mark"><svg viewBox="0 0 100 100"><path d="M 10,80 C 20,80 24,22 38,21 C 52,20 54,56 66,66 C 76,74 82,77 91,78" fill="none" stroke="#F7F7F4" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="brand-name">EFFECT CURVE</div></div>
+  <h1>How long it<br><em>actually lasts.</em></h1>
+  <p class="sub">Diazepam stays in your blood for days. It stops working in five hours. Most tools show you the first number. This one shows the second.</p>
+</div>
+<div class="right"><div class="card">
+  <div class="eyebrow">Felt effect</div>
+  <svg width="520" height="190" viewBox="0 0 520 190" style="margin-top:14px">
+    <path class="area" d="{{MQ_AREA}}"/><path class="curve" d="{{MQ_CURVE}}"/>
+    <line class="axis" x1="0" y1="189" x2="520" y2="189"/>
+  </svg>
+  <div class="row">
+    <div class="stat"><span class="stat-k">onset</span><span class="stat-v">{{XR_ONSET}}</span></div>
+    <div class="stat"><span class="stat-k">peak</span><span class="stat-v">{{XR_PEAK}}</span></div>
+    <div class="stat"><span class="stat-k">lasts</span><span class="stat-v">{{XR_LASTS}}</span></div>
+  </div>
+</div></div>
+</body></html>

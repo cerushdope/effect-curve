@@ -1,0 +1,31 @@
+Diazepam stays in your blood for days. It stops working in about five hours.
+
+Almost every tool that plots a medication plots the first number, because half-life is the number that gets published. Effect Curve plots the second one — how long you actually feel it — because that is the question people are really asking.
+
+Type what you took, how much, and when. You get a curve.
+
+WHAT MAKES THE CURVE DIFFERENT
+
+📈 Fitted, not guessed. Most models take a drug's half-life and let the effect fade whenever the drug clears. That is wrong for a lot of medications and badly wrong for some. Effect Curve solves each drug's response from its published onset and duration of action, so the curve ends when the drug is reported to stop working.
+
+📉 The dip is included. Your baseline adapts to a drug and outlasts it. When it overshoots, you land under where you started — so the graph goes under the line too, rather than politely returning to zero.
+
+🍽️ Two assumptions, not a questionnaire. The curve draws immediately using the likeliest defaults — empty stomach, occasional use — shown as chips you can correct in one click. Food moves the peak by an hour. Tolerance moves the whole dose-response curve, by 2–3× for some classes.
+
+🩸 Both views. Felt effect and blood level are different curves, and switching between them is the fastest way to see why "it's out of my system" and "it stopped working" are not the same sentence.
+
+🚫 It refuses to draw what it doesn't know. Levothyroxine, statins, SSRIs, creatine, vitamin D — anything that works over weeks gets an explanation instead of a confident line. A made-up curve is worse than no curve, and easier to believe.
+
+WHAT'S IN IT
+
+Thousands of medications, searchable by generic or brand name, including international brands. Extended-release and immediate-release forms modelled separately, because they are genuinely different shapes. Prodrugs modelled as a cascade. Nineteen supplements with published human pharmacokinetics, eleven of which produce a real same-day curve and eight of which honestly do not.
+
+PRIVACY
+
+Nothing is collected. No accounts, no analytics, no cookies, no telemetry, no storage of any kind. What you type stays in the page and is never transmitted. The one network request looks up a substance's published parameters and carries nothing about you or your dose. The extension requests a single permission — to draw in the side panel — and cannot see the pages you visit.
+
+HONESTY
+
+These are illustrative estimates built from published population figures, and the model says so on every curve. Real people vary enormously — by genetics, liver function, what else they are taking, and how long they have been taking it. Effect Curve is not a dosing tool, not a clinical tool, and not a substitute for a professional. It is a way to see the shape of a day.
+
+Open source: github.com/cerushdope/effect-curve

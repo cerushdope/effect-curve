@@ -1,0 +1,64 @@
+/* Shared by every store asset. The app's own palette — paper, ink, teal — so a
+   listing image and the product look like the same object. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden; }
+body {
+  font-family: Inter, "Segoe UI", -apple-system, Roboto, sans-serif;
+  background: #F7F7F4;
+  color: #1A1D21;
+  position: relative;
+}
+
+/* A very soft teal wash so a full-bleed paper background isn't dead flat. */
+.wash {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(46,139,139,0.13) 0%, rgba(46,139,139,0) 65%);
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  width: 44px; height: 44px; border-radius: 12px; background: #2E4D54;
+  display: grid; place-items: center; flex: none;
+}
+.brand-mark svg { width: 30px; height: 30px; }
+.brand-name {
+  font-size: 21px; font-weight: 800; letter-spacing: .015em; color: #1A1D21;
+}
+
+h1 { font-size: 52px; font-weight: 800; line-height: 1.1; letter-spacing: -.022em; }
+h1 em { font-style: normal; color: #2E8B8B; }
+.sub { font-size: 20px; line-height: 1.55; color: #5C636B; }
+
+.eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  color: #2E8B8B;
+}
+
+/* The chart card — deliberately the same geometry as the real one. */
+.card {
+  background: #fff; border: 1px solid #E4E5E1; border-radius: 14px;
+  box-shadow: 0 18px 40px -24px rgba(26,29,33,.35);
+}
+.axis { stroke: #E4E5E1; stroke-width: 1; }
+.curve { fill: none; stroke: #2E8B8B; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.curve--ghost { stroke: #B6BDBD; stroke-width: 2.5; stroke-dasharray: 7 5; }
+.curve--alt { stroke: #C77D4A; }
+.area { fill: #2E8B8B; fill-opacity: .12; stroke: none; }
+.tick { font: 12px "IBM Plex Mono", ui-monospace, monospace; fill: #8A9096; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 13px; border-radius: 999px; font-size: 14px;
+  border: 1px solid #E4E5E1; background: #fff; color: #3A4046;
+}
+.pill--on { border-color: #2E8B8B; background: rgba(46,139,139,.09); color: #1A1D21; font-weight: 600; }
+.pill b { font-weight: 700; color: #1A1D21; }
+
+.stat { display: flex; align-items: baseline; gap: 9px; }
+.stat-k {
+  font: 11px "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .1em; text-transform: uppercase; color: #8A9096;
+}
+.stat-v { font: 600 17px "IBM Plex Mono", ui-monospace, monospace; color: #1A1D21; }
+
+.note { font-size: 14px; color: #8A9096; }

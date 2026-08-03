@@ -1,0 +1,18 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>html,body{width:1280px;height:800px}body{padding:52px 84px 48px;display:flex;flex-direction:column}.wash{width:820px;height:820px;top:-300px;right:-220px}h1{margin:16px 0 14px;font-size:48px}.sub{max-width:760px}.card{margin-top:auto;padding:26px 32px}</style></head><body><div class="wash"></div>
+<div class="brand"><div class="brand-mark"><svg viewBox="0 0 100 100"><path d="M 10,80 C 20,80 24,22 38,21 C 52,20 54,56 66,66 C 76,74 82,77 91,78" fill="none" stroke="#F7F7F4" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="brand-name">EFFECT CURVE</div></div>
+<h1>Still in your blood.<br><em>Stopped working hours ago.</em></h1>
+<p class="sub">Diazepam's half-life is 51 hours. Its anxiolytic effect lasts about five. Every tool that plots a half-life tells you the wrong one — because what you feel tracks distribution, not elimination.</p>
+<div class="card">
+  <svg width="900" height="300" viewBox="0 0 900 330" preserveAspectRatio="none">
+    <path class="area" d="{{DZ_FELT_AREA}}"/>
+    <path class="curve curve--ghost" d="{{DZ_BLOOD}}"/>
+    <path class="curve" d="{{DZ_FELT}}"/>
+    <line class="axis" x1="0" y1="329" x2="900" y2="329"/>
+  </svg>
+  <div style="display:flex;gap:34px;align-items:center;margin-top:20px">
+    <span class="pill pill--on"><b>Felt effect</b> — {{DZ_LASTS}}</span>
+    <span class="pill"><b>Blood level</b> — still measurable in days</span>
+    <span class="note" style="margin-left:auto">diazepam 5 mg, 08:00</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>html,body{width:1280px;height:800px}body{padding:52px 84px 48px;display:flex;flex-direction:column}.wash{width:820px;height:820px;top:-300px;right:-220px}h1{margin:16px 0 14px;font-size:48px}.sub{max-width:760px}.card{margin-top:auto;padding:26px 32px}</style></head><body><div class="wash"></div>
+<div class="eyebrow">Fitted, not guessed</div>
+<h1>Every curve is solved<br>from <em>published numbers.</em></h1>
+<p class="sub">Onset and duration of action come from the literature. The model works backwards from them, so the curve ends when the drug is actually reported to stop working — rather than whenever its half-life happens to run out.</p>
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div class="eyebrow">Methylphenidate XR · 36 mg</div>
+    <span class="note">fitted to published onset &amp; duration</span>
+  </div>
+  <svg width="820" height="300" viewBox="0 0 820 300" style="margin-top:16px">
+    <path class="area" d="{{XR_AREA}}"/><path class="curve" d="{{XR_FELT}}"/>
+    <line class="axis" x1="0" y1="299" x2="820" y2="299"/>
+  </svg>
+  <div style="display:flex;gap:44px;margin-top:20px">
+    <div class="stat"><span class="stat-k">onset</span><span class="stat-v">{{XR_ONSET}}</span></div>
+    <div class="stat"><span class="stat-k">peak</span><span class="stat-v">{{XR_PEAK}}</span></div>
+    <div class="stat"><span class="stat-k">lasts</span><span class="stat-v">{{XR_LASTS}}</span></div>
+    <div class="stat"><span class="stat-k">channel</span><span class="stat-v">focus &amp; drive</span></div>
+  </div>
+</div>
+</body></html>

@@ -23,3 +23,6 @@ ingest/.cache/
 # Chrome extension build output — regenerate with `node tools/build-extension.mjs`
 extension/app/
 
+
+# Store asset build output — regenerate with `node store-assets/render.mjs`
+store/

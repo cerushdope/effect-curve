@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>html,body{width:1280px;height:800px}body{padding:52px 84px 48px;display:flex;flex-direction:column}.wash{width:820px;height:820px;top:-300px;right:-220px}h1{margin:16px 0 14px;font-size:48px}.sub{max-width:760px}.card{margin-top:auto;padding:26px 32px}</style></head><body><div class="wash"></div>
+<div class="eyebrow">Two questions, not ten</div>
+<h1>Sensible defaults.<br><em>Correct them if wrong.</em></h1>
+<p class="sub">The curve draws immediately using the assumptions most likely to be true. They sit on the card as chips — change one and the shape changes, because food moves the peak by an hour and tolerance moves the whole dose-response curve.</p>
+<div class="card">
+  <div style="display:flex;gap:11px;align-items:center">
+    <span class="note" style="margin-right:4px">assuming</span>
+    <span class="pill pill--on">empty stomach</span>
+    <span class="pill pill--on">occasional</span>
+    <span class="note" style="margin-left:10px">← click either to change</span>
+  </div>
+  <svg width="760" height="260" viewBox="0 0 760 260" style="margin-top:20px">
+    <path class="curve" d="{{FASTED}}"/>
+    <path class="curve curve--alt curve--ghost" d="{{FED}}"/>
+    <line class="axis" x1="0" y1="259" x2="760" y2="259"/>
+  </svg>
+  <div style="display:flex;gap:26px;margin-top:16px">
+    <span class="pill pill--on">empty stomach</span>
+    <span class="pill" style="border-color:#C77D4A;color:#C77D4A">with food — peak arrives later</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>html,body{width:1280px;height:800px}body{padding:52px 84px 48px;display:flex;flex-direction:column}.wash{width:820px;height:820px;top:-300px;right:-220px}h1{margin:16px 0 14px;font-size:48px}.sub{max-width:760px}.card{margin-top:auto;padding:26px 32px}</style></head><body><div class="wash"></div>
+<div class="eyebrow">Below the line</div>
+<h1>The crash is part<br>of <em>the curve.</em></h1>
+<p class="sub">Your baseline chases the drug and outlasts it. When it overshoots, you end up below where you started — the curve dips under the line you started from — modestly, which is how it actually feels.</p>
+<div class="card">
+  <div class="eyebrow">Dextroamphetamine · daily use</div>
+  <svg width="820" height="300" viewBox="0 0 820 300" style="margin-top:16px">
+    <path class="area" d="{{CR_AREA}}"/><path class="curve" d="{{CR_FELT}}"/>
+    <line class="axis" x1="0" y1="{{CR_ZERO}}" x2="820" y2="{{CR_ZERO}}" stroke="#8A9096" stroke-width="1.5"/>
+    <text class="tick" x="6" y="{{CR_ZERO}}" dy="-7">baseline</text>
+    <circle cx="{{CR_X}}" cy="{{CR_Y}}" r="6" fill="#C77D4A"/>
+    <line x1="{{CR_X}}" y1="{{CR_Y}}" x2="{{CR_X}}" y2="{{CR_ZERO}}" stroke="#C77D4A" stroke-width="1.5"/>
+    <text class="tick" x="{{CR_X}}" y="{{CR_Y}}" dy="26" text-anchor="middle" fill="#C77D4A">below baseline</text>
+  </svg>
+  <div style="display:flex;gap:34px;align-items:center;margin-top:18px">
+    <div class="stat"><span class="stat-k">crash</span><span class="stat-v">{{CR_AT}} ({{CR_DEPTH}})</span></div>
+    <span class="note" style="margin-left:auto">rate-dependence, acute tolerance and rebound from one mechanism</span>
+  </div>
+</div>
+</body></html>

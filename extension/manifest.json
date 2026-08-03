@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Effect Curve",
   "version": "1.0.0",
-  "description": "Log what you took, how much, and when — see the felt effect over time.",
+  "description": "See how long a dose actually lasts — a felt-effect curve over time, fitted to published onset and duration.",
   "minimum_chrome_version": "114",
 
   "permissions": ["sidePanel"],
