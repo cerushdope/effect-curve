@@ -146,11 +146,12 @@ for (const [file, [w, h]] of Object.entries(SIZES)) {
 
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
   await page.setContent(html, { waitUntil: "load" });
+  // No omitBackground, so Playwright composites onto an opaque background and
+  // every file lands alpha-free already. An earlier version also wrote "-24"
+  // flattened copies for the Web Store slots that reject transparency; they came
+  // out byte-identical to these, because there was never any alpha to flatten.
+  // Duplicates that look like a safety net are worse than no safety net.
   await page.screenshot({ path: join(out, `${NAME[file]}.png`) });
-
-  // Flattened, no alpha — some Web Store slots reject transparency outright.
-  await page.addStyleTag({ content: "html{background:#fff}" });
-  await page.screenshot({ path: join(out, `${NAME[file]}-24.png`), omitBackground: false });
   await page.close();
   console.log(`  ${NAME[file]}.png  ${w}x${h}`);
 }

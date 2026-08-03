@@ -51,8 +51,7 @@ https://cerushdope.github.io/effect-curve/privacy.html
 | tile-small.png | Small promo tile | 440×280 |
 | marquee.png | Marquee promo tile | 1400×560 |
 
-`-24` copies are the same images flattened onto white, for any slot that rejects
-an alpha channel.
+Every file is written alpha-free, so they upload to any slot as-is.
 
 The curves in every image are computed by the shipping engine from the live
 database — `render.mjs` runs the real `computeSeries` and injects the result as
