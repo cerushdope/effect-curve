@@ -1,7 +1,11 @@
 # Effect Curve — Chrome Web Store Listing Copy
 
 ## Name (from manifest)
-Effect Curve
+Effect Curve - How Long It Actually Lasts
+
+Plain hyphen, not an em dash, to match the other listings (Archetype, Deja Vu,
+Pixel Shelf). 41 characters -- the store truncates around 45 in some surfaces,
+so the brand word survives everywhere even where the tagline doesn't.
 
 ## Summary (from manifest, max 132 chars)
 See how long a dose actually lasts — a felt-effect curve over time, fitted to published onset and duration.
