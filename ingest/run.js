@@ -280,6 +280,7 @@ function summary(rows, stats) {
   console.log(`aliases     ${rows.reduce((n, r) => n + r.aliases.length, 0)}`);
   console.log(`pk source   regex ${stats.regex} | llm ${stats.llm} | class-default ${stats.defaults}`);
   console.log(`pk repairs  ${pkRepairs.inconsistent} impossible Tmax/half-life pairs, ` +
+    `${pkRepairs.implausibleTmax} Tmax over the route ceiling, ` +
     `${pkRepairs.absurdHalfLife} absurd half-lives -> class default`);
   console.log(`categories  ${top.map(([c, n]) => `${c}:${n}`).join("  ")}`);
   console.log(`\n${NLM_ATTRIBUTION}\n${OPENFDA_ATTRIBUTION}\nSubstance names and classifications from Wikidata (CC0).`);

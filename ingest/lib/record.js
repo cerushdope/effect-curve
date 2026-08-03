@@ -46,7 +46,27 @@ function doseStats(strengthsMg) {
 }
 
 /** Counts how many records needed repairing, for the run summary. */
-export const pkRepairs = { inconsistent: 0, absurdHalfLife: 0 };
+export const pkRepairs = { inconsistent: 0, absurdHalfLife: 0, implausibleTmax: 0 };
+
+// Route-aware ceiling on an extracted Tmax.
+//
+// pk.js has to apply ONE bound to every drug, and it is set at 14 days so that
+// biologics survive (denosumab genuinely peaks in ~10 days). Applied to a
+// swallowed tablet that bound is meaningless: it let through haloperidol at
+// 6 days, progesterone at 12, and clotrimazole at 36 hours. By the time we get
+// here we know the dose form, so we can say what is actually possible.
+const TMAX_CEILING = {
+  oral_IR: 720,   // 12 h — generous; real IR orals peak inside 4
+  oral_DR: 900,   // enteric coating buys a couple of hours
+  oral_XR: 1440,
+  rectal: 720,
+  sublingual: 240,
+  nasal: 240,
+  inhaled: 120,
+  injection: 720,
+  iv: 60,
+  patch: 20160,   // genuinely slow; keep the wide bound
+};
 
 /**
  * Reject an extracted (Tmax, half-life) pair that cannot describe a real oral
@@ -78,14 +98,40 @@ function plausiblePk(pk, family) {
     pkRepairs.absurdHalfLife++;
   }
 
-  if (tmax != null && halfLife != null && !family.startsWith("patch")) {
-    const peakBound = halfLife / LN2; // = 1/ke
-    if (tmax > peakBound) {
-      halfLife = null; // fall back to the class default
+  const ceiling = TMAX_CEILING[family] ?? 20160;
+  if (tmax != null && tmax > ceiling) {
+    tmax = null;
+    pkRepairs.implausibleTmax++;
+  }
+
+  // Tmax cannot exceed 1/ke for first-order input into one compartment. This
+  // used to resolve the contradiction by discarding the HALF-LIFE and keeping
+  // the Tmax, which is backwards. The half-life anchors ("half-life", "t½") are
+  // specific; the Tmax anchors also match prose like "peak plasma concentrations
+  // were reduced by 30%" and "maximum concentration after 14 days of dosing", so
+  // Tmax is by far the noisier of the two. Drop the noisier one.
+  //
+  // Lorazepam is the case in point: it kept a 14 h Tmax and threw away a good
+  // 12 h half-life, so the app drew an 8am dose peaking at 10pm.
+  //
+  // XR and patch are exempt: flip-flop kinetics make Tmax > 1/ke genuinely
+  // correct there, and the engine models it deliberately.
+  if (tmax != null && halfLife != null && family !== "oral_XR" && !family.startsWith("patch")) {
+    if (tmax > halfLife / LN2) {
+      tmax = null;
       pkRepairs.inconsistent++;
     }
   }
-  return { tmax, halfLife };
+
+  // Provenance is PER FIELD. Stamping one source onto both is how 15% of
+  // "label-sourced" half-lives came to be exactly 300 minutes — the class
+  // default, wearing a label's name because the Tmax beside it was real.
+  const src = pk?.source || "openfda_label";
+  return {
+    tmax, halfLife,
+    tmaxSource: tmax != null ? src : "class_default",
+    halfLifeSource: halfLife != null ? src : "class_default",
+  };
 }
 
 /**
@@ -218,7 +264,14 @@ export function buildRecord({ ingredient, displayName, ndc, wd, pk, rxcui }) {
     ?? measured.tmax
     ?? ROUTE_DEFAULTS[families[0]].tmax;
   const primaryHalfLife = measured.halfLife ?? ROUTE_DEFAULTS[families[0]].halfLife;
-  const sourceType = pk?.source || (measured.tmax || measured.halfLife ? "openfda_label" : "class_default");
+  const tmaxSource = measured.tmaxSource;
+  const halfLifeSource = measured.halfLifeSource;
+  // Summary provenance for the record as a whole: label-sourced only if BOTH
+  // numbers came off a label. Anything less and the honest answer is "partly".
+  const sourceType =
+    tmaxSource === halfLifeSource ? tmaxSource
+      : tmaxSource === "class_default" || halfLifeSource === "class_default" ? "partial_label"
+        : tmaxSource;
 
   const aliases = buildAliases(displayName, [
     ndc ? [...ndc.brands] : [],
@@ -245,11 +298,11 @@ export function buildRecord({ ingredient, displayName, ndc, wd, pk, rxcui }) {
       unit: dose.unit,
       routes,
       landmarks: {
-        tmax_min: landmark(primaryTmax, "min", sourceType),
-        half_life_min: landmark(primaryHalfLife, "min", sourceType),
+        tmax_min: landmark(primaryTmax, "min", tmaxSource),
+        half_life_min: landmark(primaryHalfLife, "min", halfLifeSource),
       },
       confidence: LOW,
-      notes: buildNotes({ ndc, wd, pk, sourceType, families }),
+      notes: buildNotes({ ndc, wd, pk, tmaxSource, halfLifeSource, families }),
       provenance: {
         rxcui: rxcui || null,
         atc,
@@ -257,24 +310,31 @@ export function buildRecord({ ingredient, displayName, ndc, wd, pk, rxcui }) {
         wikidata: wd?.item || null,
         us_products: ndc?.products || 0,
         pk_source: sourceType,
+        pk_source_tmax: tmaxSource,
+        pk_source_half_life: halfLifeSource,
         prodrug_of: pk?.prodrug_of || null,
       },
     },
   };
 }
 
-function buildNotes({ ndc, wd, pk, sourceType, families }) {
+function buildNotes({ ndc, wd, pk, tmaxSource, halfLifeSource, families }) {
   const bits = [];
   if (pk?.prodrug_of) {
     bits.push(`Prodrug of ${pk.prodrug_of}; the felt curve follows the active metabolite, so it peaks later and fades slower than the parent.`);
   }
-  bits.push(
-    sourceType === "openfda_label"
-      ? "Tmax and half-life auto-extracted from an FDA label; not hand-checked."
-      : sourceType === "llm_label"
-        ? "Tmax and half-life read from a tabular FDA label section; not hand-checked."
-        : "No PK figures stated on the label — this curve uses class-typical placeholder values."
-  );
+  // Say which of the two numbers is real. "Auto-extracted from an FDA label"
+  // covering a value that was actually a class default is the kind of note that
+  // makes a reader trust a curve more than they should.
+  const where = (s) =>
+    s === "llm_label" ? "read from a tabular FDA label section"
+      : s === "openfda_label" ? "auto-extracted from an FDA label"
+        : null;
+  const t = where(tmaxSource), h = where(halfLifeSource);
+  if (t && h) bits.push(`Tmax and half-life ${t === h ? t : `${t} and ${h} respectively`}; not hand-checked.`);
+  else if (t) bits.push(`Tmax ${t}; half-life is a class-typical placeholder. Not hand-checked.`);
+  else if (h) bits.push(`Half-life ${h}; Tmax is a class-typical placeholder. Not hand-checked.`);
+  else bits.push("No PK figures stated on the label — this curve uses class-typical placeholder values.");
   if (families.length > 1) bits.push(`Routes available: ${families.join(", ")}.`);
   if (!ndc && wd) bits.push("No US product found; identified from Wikidata only.");
   bits.push("Illustrative estimate, not a dosing or clinical tool.");
