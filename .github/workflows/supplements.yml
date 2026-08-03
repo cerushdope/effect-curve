@@ -1,0 +1,44 @@
+name: Ingest supplements
+
+# Separate from the main ingest on purpose. That job downloads ~1 GB of bulk
+# openFDA data and runs for over an hour; this one writes ~20 curated rows and
+# finishes in seconds. Keeping them apart means you can fix a supplement without
+# re-running the whole corpus.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and validate only — do not write to Supabase"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest # shares the drug ingest's lock: never write the table from two jobs at once
+  cancel-in-progress: false
+
+jobs:
+  supplements:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Catches a malformed record before it can reach the table.
+      - name: Validate (always, even on a real run)
+        working-directory: ingest
+        run: node supplements.js --dry-run
+
+      - name: Upsert supplements
+        if: ${{ inputs.dry_run != true }}
+        working-directory: ingest
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node supplements.js

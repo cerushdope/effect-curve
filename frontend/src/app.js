@@ -11,7 +11,9 @@ import { computeSeries, FELT_FLOOR, PLASMA_FLOOR_FRAC } from "./engine.js";
 import { createSearchBar } from "./components/searchBar.js";
 import { renderSubstancePanel } from "./components/substancePanel.js";
 import { createReadoutStrip } from "./components/readoutStrip.js";
-import { createEffectChart } from "/src/components/effectChart.js";
+// Relative, like every other import here — an extension page has no site root
+// for "/" to resolve against, so an absolute path 404s in the side panel.
+import { createEffectChart } from "./components/effectChart.js";
 
 const RECOMPUTE_MS = 250;
 

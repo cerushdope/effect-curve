@@ -5,17 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Effect Curve — felt drug effect over time</title>
   <meta name="description" content="Graph the felt effect of one or more substances over time." />
-  <link rel="stylesheet" href="/src/styles/app.css" />
-  <script>
-    // Bootstrap: enable the standalone mock when ?mock=1 is present, so the UI
-    // is demoable without the FastAPI backend running.
-    (function () {
-      try {
-        var p = new URLSearchParams(location.search);
-        if (p.get("mock") === "1") window.EFFECT_CURVE_MOCK = true;
-      } catch (e) {}
-    })();
-  </script>
+  <link rel="stylesheet" href="./src/styles/app.css" />
+  <!-- Not inline: MV3's extension CSP blocks inline script, and this same file
+       is the extension's side panel. -->
+  <script src="./src/boot.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#chart-region">Skip to chart</a>
@@ -88,6 +81,7 @@
     </span>
   </footer>
 
-  <script type="module" src="/src/app.js"></script>
+  <!-- Relative, not absolute: an extension page has no site root to resolve "/" against. -->
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>

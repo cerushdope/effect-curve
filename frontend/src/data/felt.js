@@ -39,6 +39,15 @@ export const PD_CLASS = {
   analgesic:   { hill_n: 1.2, gamma: 0.20, adapt_half_min: 300, rebound_max: 15, tol_daily: 3.5, channel: "pain relief" },
   opioid:      { hill_n: 1.2, gamma: 0.28, adapt_half_min: 240, rebound_max: 30, tol_daily: 4.0, channel: "pain relief" },
   depressant:  { hill_n: 1.4, gamma: 0.40, adapt_half_min: 120, rebound_max: 35, tol_daily: 2.0, channel: "intoxication" },
+
+  // Supplements. Low gamma across the board: these mostly don't produce the
+  // sharp adaptation debt that makes a stimulant crash, and inventing one would
+  // be the "sophistication reads as credibility" trap. Low tol_daily for the
+  // same reason — tolerance to l-theanine is not a documented thing.
+  nootropic:   { hill_n: 1.3, gamma: 0.18, adapt_half_min: 240, rebound_max: 10, tol_daily: 1.2, channel: "calm focus" },
+  adaptogen:   { hill_n: 1.2, gamma: 0.15, adapt_half_min: 360, rebound_max: 8,  tol_daily: 1.2, channel: "drive & resilience" },
+  other_felt:  { hill_n: 1.4, gamma: 0.20, adapt_half_min: 180, rebound_max: 8,  tol_daily: 1.1, channel: "noticeable effect" },
+
   _default:    { hill_n: 1.3, gamma: 0.15, adapt_half_min: 300, rebound_max: 12, tol_daily: 1.5, channel: "effect" },
 };
 
@@ -161,6 +170,32 @@ export const FELT = {
   codeine:   { class: "opioid", routes: { _: { onset_min: 40, duration_min: 240 } } },
   tramadol:  { class: "opioid", routes: { _: { onset_min: 50, duration_min: 330 } } },
 
+  // ---- supplements -------------------------------------------------------- //
+  // Onset/duration for these are consensus from user-reported and trial
+  // timings, which are softer sources than a drug label's duration of action.
+  // The fit treats them identically; the confidence badge does not.
+  l_theanine:     { routes: { _: { onset_min: 40, duration_min: 180 } } },
+  l_tyrosine:     { routes: { _: { onset_min: 60, duration_min: 240 } } },
+  rhodiola_rosea: { routes: { _: { onset_min: 45, duration_min: 300 } } },
+  panax_ginseng:  { routes: { _: { onset_min: 60, duration_min: 300 } } },
+  alpha_gpc:      { routes: { _: { onset_min: 45, duration_min: 240 } } },
+  citicoline:     { routes: { _: { onset_min: 60, duration_min: 300 } } },
+  taurine:        { routes: { _: { onset_min: 45, duration_min: 180 } } },
+  glycine:        { class: "sedative", routes: { _: { onset_min: 30, duration_min: 180 } } },
+  five_htp:       { class: "sedative", routes: { _: { onset_min: 60, duration_min: 300 } } },
+  // The tingling is the acute effect and it tracks the blood level tightly.
+  beta_alanine:   { routes: { _: { onset_min: 20, duration_min: 90 } } },
+  l_citrulline:   { routes: { _: { onset_min: 45, duration_min: 180 } } },
+
+  creatine:   { felt: "none", reason: "Creatine saturates muscle stores over 2–4 weeks. A single dose raises blood creatine and changes nothing you can feel that day." },
+  magnesium:  { felt: "none", reason: "Magnesium works by correcting a deficit over days to weeks. Single-dose effects are widely reported but not established — drawing one would be inventing it. The blood-level curve is real." },
+  ashwagandha:{ felt: "none", reason: "The cortisol and anxiety effects appear after 4–8 weeks of daily use." },
+  bacopa_monnieri: { felt: "none", reason: "Bacopa's memory effect appears at 8–12 weeks. Nothing to feel from one dose." },
+  vitamin_d3: { felt: "none", reason: "Vitamin D corrects a deficiency over weeks to months — its half-life is measured in weeks." },
+  omega_3:    { felt: "none", reason: "Omega-3s incorporate into cell membranes over weeks." },
+  zinc:       { felt: "none", reason: "Zinc matters through repletion over days to weeks. The one same-day effect people notice is nausea on an empty stomach." },
+  gaba:       { felt: "none", reason: "Oral GABA barely crosses the blood-brain barrier. Reported effects are contested and probably peripheral." },
+
   // ---- refuse to draw ----------------------------------------------------- //
   levothyroxine: {
     felt: "none",
@@ -185,7 +220,13 @@ export const FELT = {
 };
 
 // Whole categories where a single-dose felt curve is never meaningful.
-const NO_FELT_CATEGORIES = new Set(["anti-infective", "hormone", "vitamin"]);
+const NO_FELT_CATEGORIES = new Set([
+  "anti-infective", "hormone", "vitamin",
+  // Everything in this category is defined by acting over weeks. Listing the
+  // category as well as each id means a supplement added later defaults to
+  // refusing rather than to drawing a made-up curve.
+  "supplement_chronic",
+]);
 
 /**
  * Felt observables for a substance+route, or a refusal.

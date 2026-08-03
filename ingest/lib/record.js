@@ -46,7 +46,16 @@ function doseStats(strengthsMg) {
 }
 
 /** Counts how many records needed repairing, for the run summary. */
-export const pkRepairs = { inconsistent: 0, absurdHalfLife: 0, implausibleTmax: 0 };
+export const pkRepairs = {
+  inconsistent: 0, absurdHalfLife: 0, implausibleTmax: 0,
+  identicalPair: 0, uncorroborated: 0,
+};
+
+// A half-life this long is real for a handful of drugs (amiodarone ~58 days,
+// alendronate longer still) and a mis-parse for everything else. Rather than
+// pick a ceiling that has to be wrong in one direction, demand corroboration:
+// above this, the label has to say it more than once.
+const EXTREME_HALF_LIFE = 4320; // 3 days
 
 // Route-aware ceiling on an extracted Tmax.
 //
@@ -96,6 +105,25 @@ function plausiblePk(pk, family) {
   if (halfLife != null && halfLife > 20160) {
     halfLife = null;
     pkRepairs.absurdHalfLife++;
+  }
+
+  // Identical Tmax and half-life means one regex window caught the same number
+  // twice — there is no drug whose peak time equals its half-life to the minute.
+  // Magnesium shipped as 510/510 this way.
+  if (tmax != null && halfLife != null && tmax === halfLife) {
+    tmax = null;
+    halfLife = null;
+    pkRepairs.identicalPair++;
+  }
+
+  // An extreme value needs a second mention. One stray match is how caffeine
+  // ended up with an 84 h half-life (real answer ~5 h) and zinc with 6 days:
+  // both sailed through the absolute bound because 84 h is a perfectly ordinary
+  // number for SOME drug, just not for these. Corroboration separates the two
+  // without needing a per-drug ceiling.
+  if (halfLife != null && halfLife > EXTREME_HALF_LIFE && (pk?.samples?.halfLife ?? 0) < 2) {
+    halfLife = null;
+    pkRepairs.uncorroborated++;
   }
 
   const ceiling = TMAX_CEILING[family] ?? 20160;

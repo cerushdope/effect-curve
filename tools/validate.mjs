@@ -27,11 +27,21 @@ const DEFAULT_SET = [
 const args = process.argv.slice(2);
 const all = args.includes("--all");
 const explicit = args.filter((a) => !a.startsWith("--"));
+const supplementsOnly = args.includes("--supplements");
 const ids = explicit.length ? explicit
+  : supplementsOnly ? (await import("../ingest/lib/supplements.js")).default ?? Object.keys(
+      (await import("../ingest/lib/supplements.js")).SUPPLEMENTS)
   : all ? Object.keys(FELT).filter((k) => FELT[k].routes)
   : DEFAULT_SET;
 
 async function fetchRecords(list) {
+  // --supplements checks the curated rows BEFORE they are written, straight out
+  // of the builder. That way a bad supplement is caught at author time rather
+  // than after it has been upserted into the live table.
+  if (process.argv.includes("--supplements")) {
+    const { buildSupplementRows } = await import("../ingest/lib/supplements.js");
+    return new Map(buildSupplementRows().map((r) => [r.id, applyPkFix(r.record)]));
+  }
   const url = `${SUPABASE_URL}/rest/v1/substances?id=in.(${list.join(",")})&select=id,record`;
   const res = await fetch(url, { headers: { apikey: SUPABASE_KEY } });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);

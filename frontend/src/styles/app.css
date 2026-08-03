@@ -634,6 +634,40 @@ html, body {
 }
 
 /* --------------------------------------------------------------------- */
+/* Narrow — Chrome's side panel, and phones in portrait                  */
+/* --------------------------------------------------------------------- */
+/* The side panel opens around 320-400px and the user can drag it wider.
+   Everything here is about giving the chart usable height in a tall, thin
+   column: the header shrinks to a single line, the chart keeps a floor so the
+   onset still reads as a ramp rather than a wall, and the footer attribution
+   collapses to a disclosure so it stops eating half the panel. */
+@media (max-width: 480px) {
+  .layout {
+    padding: var(--s-3);
+    gap: var(--s-3);
+  }
+  .app-header__inner { padding: var(--s-2) var(--s-3); }
+  .app-tagline { display: none; }
+
+  .hero__chartwrap { height: clamp(240px, 38vh, 340px); }
+  .hero__bar { flex-wrap: wrap; gap: var(--s-2); }
+
+  /* Two stats per row instead of one long line that wraps mid-label. */
+  .readout__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px var(--s-3); }
+  .readout__conf { flex-wrap: wrap; }
+
+  .chiprow { gap: 4px; }
+  .chip { font-size: 11px; padding: 2px 6px; }
+
+  /* Required NLM attribution: still present, no longer dominant. */
+  .app-footer .attribution {
+    max-height: 3.2em;
+    overflow-y: auto;
+    font-size: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------- */
 /* Reduced motion — disable transitions/animations                     */
 /* --------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
