@@ -5,6 +5,26 @@
 
 import { brandLabels } from "../aliasLabels.js";
 import { renderDoseRows } from "./doseRows.js";
+import { FOOD_LEVELS, TOLERANCE_LEVELS, feltFor, foodAffects } from "../data/felt.js";
+
+// The two inputs that move the curve most, after dose and time. They are
+// APPLIED BY DEFAULT and shown here as the current answer — the user never has
+// to answer a questionnaire before seeing a curve, they just correct the two
+// assumptions if they're wrong.
+const CHIPS = [
+  {
+    key: "food",
+    levels: FOOD_LEVELS,
+    order: ["empty", "food"],
+    title: "Food shifts the peak by an hour or more through gastric emptying — it changes the shape of the rise, not just the height.",
+  },
+  {
+    key: "tolerance",
+    levels: TOLERANCE_LEVELS,
+    order: ["first_time", "occasional", "daily"],
+    title: "How often you take it. Regular use shifts the whole dose-response curve — 2-3x for benzodiazepines. On 'daily' the curve also starts below baseline, which is why the first dose restores normal rather than lifting above it.",
+  },
+];
 
 /**
  * @param {HTMLElement} container
@@ -94,11 +114,93 @@ export function renderSubstancePanel(container, state, store, opts = {}) {
     const dr = document.createElement("div");
     dr.className = "card__doses";
 
-    card.append(head, facts, ...(alsoEl ? [alsoEl] : []), dr);
+    const extras = [];
+    if (sub.facts) {
+      const routeEl = renderRoutePicker(sub, store);
+      if (routeEl) extras.push(routeEl);
+      extras.push(renderConditions(sub, store));
+      const note = renderFeltNote(sub);
+      if (note) extras.push(note);
+    }
+
+    card.append(head, facts, ...(alsoEl ? [alsoEl] : []), ...extras, dr);
     container.append(card);
 
     renderDoseRows(dr, sub, store, { stepMin: opts.stepMin || 5 });
   }
+}
+
+/** Route selector — only when there's more than one to pick from. */
+function renderRoutePicker(sub, store) {
+  const routes = sub.facts?.routes || [];
+  if (routes.length < 2) return null;
+  const wrap = document.createElement("div");
+  wrap.className = "chiprow";
+  const label = document.createElement("span");
+  label.className = "chiprow__label";
+  label.textContent = "route";
+  const sel = document.createElement("select");
+  sel.className = "chip chip--select";
+  sel.setAttribute("aria-label", `Route for ${sub.name}`);
+  for (const r of routes) {
+    const o = document.createElement("option");
+    o.value = r.id;
+    o.textContent = r.formulation || r.id;
+    if (r.id === sub.routeId) o.selected = true;
+    sel.append(o);
+  }
+  sel.addEventListener("change", () => store.setRoute(sub.id, sel.value));
+  wrap.append(label, sel);
+  return wrap;
+}
+
+/** The default-on condition chips. Clicking cycles to the next option. */
+function renderConditions(sub, store) {
+  const wrap = document.createElement("div");
+  wrap.className = "chiprow";
+  const label = document.createElement("span");
+  label.className = "chiprow__label";
+  label.textContent = "assuming";
+  wrap.append(label);
+
+  const route = (sub.facts?.routes || []).find((r) => r.id === sub.routeId) || sub.facts?.routes?.[0];
+  for (const chip of CHIPS) {
+    // Don't offer "with food" on a route where food can't matter.
+    if (chip.key === "food" && route && !foodAffects(route.id, route.route_type)) continue;
+
+    const cur = (sub.conditions && sub.conditions[chip.key]) || chip.order[0];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip" + (cur !== chip.order[0] ? " is-set" : "");
+    btn.textContent = (chip.levels[cur] || {}).label || cur;
+    btn.title = chip.title;
+    btn.setAttribute("aria-label", `${chip.key}: ${btn.textContent}. Click to change.`);
+    btn.addEventListener("click", () => {
+      const i = chip.order.indexOf(cur);
+      store.setCondition(sub.id, { [chip.key]: chip.order[(i + 1) % chip.order.length] });
+    });
+    wrap.append(btn);
+  }
+  return wrap;
+}
+
+/** Says what the single curve MEANS, or why we won't draw one. */
+function renderFeltNote(sub) {
+  const route = (sub.facts?.routes || []).find((r) => r.id === sub.routeId) || sub.facts?.routes?.[0];
+  const info = feltFor(sub.facts?.id, route?.id, sub.facts?.category);
+  if (info.kind === "none") {
+    const p = document.createElement("p");
+    p.className = "card__nofelt";
+    p.textContent = info.reason;
+    return p;
+  }
+  if (info.kind === "unfitted") {
+    const p = document.createElement("p");
+    p.className = "card__sub card__sub--dim";
+    p.textContent = "Felt-effect shape is a class estimate — no published onset/duration for this one.";
+    return p;
+  }
+  return null;
 }
 
 function fmtMin(v) {

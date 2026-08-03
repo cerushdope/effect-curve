@@ -206,6 +206,7 @@ export function createEffectChart(container, options = {}) {
   }
 
   let curYMax = 100; // recomputed each render; the plasma axis auto-scales to data
+  let curYMin = 0;   // goes negative when a curve rebounds below baseline
 
   function niceCeil(x) {
     const steps = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
@@ -217,8 +218,8 @@ export function createEffectChart(container, options = {}) {
     return nice * pow;
   }
 
-  // Felt is always 0..100 (Emax-saturated). Plasma is linear/unbounded, so the
-  // axis grows to fit the tallest visible curve instead of clipping it flat.
+  // Felt is 0..100 (Emax-saturated). Plasma is linear/unbounded, so the axis
+  // grows to fit the tallest visible curve instead of clipping it flat.
   function computeYMax() {
     if (mode !== 'plasma') return 100;
     let m = 0;
@@ -232,6 +233,25 @@ export function createEffectChart(container, options = {}) {
     return niceCeil(m > 0 ? m : 1);
   }
 
+  // Felt effect can go BELOW zero: once the adaptive baseline outlasts the drug,
+  // the drive is negative and you're worse off than before the dose. That's the
+  // crash, and it's the part of the arc a 0..100 axis could never show. The
+  // floor only opens up when a curve actually uses it, so ordinary drugs keep a
+  // clean zero-based axis.
+  function computeYMin() {
+    if (mode === 'plasma') return 0; // a blood level is never negative
+    let m = 0;
+    if (state && state.series) {
+      for (const s of state.series) {
+        if (s.muted) continue;
+        const v = s.felt_effect;
+        if (v) for (const x of v) if (x < m) m = x;
+      }
+    }
+    if (m >= -1) return 0;
+    return -Math.min(50, Math.ceil((-m * 1.25) / 10) * 10);
+  }
+
   function tToX(t, dom) {
     const [a, b] = dom;
     return plot.x + ((t - a) / (b - a)) * plot.w;
@@ -241,7 +261,8 @@ export function createEffectChart(container, options = {}) {
     return a + ((px - plot.x) / plot.w) * (b - a);
   }
   function vToY(v) {
-    return plot.y + plot.h * (1 - clamp(v, 0, curYMax) / curYMax);
+    const span = curYMax - curYMin;
+    return plot.y + plot.h * (1 - (clamp(v, curYMin, curYMax) - curYMin) / span);
   }
 
   function seriesValues(s) {
@@ -264,7 +285,9 @@ export function createEffectChart(container, options = {}) {
     const ticks =
       mode === 'plasma'
         ? [0, 0.25, 0.5, 0.75, 1].map((f) => f * max)
-        : [0, 25, 50, 75, 100];
+        : [0, 25, 50, 75, 100].concat(
+            curYMin < 0 ? [curYMin, curYMin / 2].map((v) => Math.round(v / 5) * 5).filter((v) => v <= -5) : [],
+          );
     ctx.save();
     ctx.font = '11px ' + FONT_MONO;
     ctx.textAlign = 'right';
@@ -283,6 +306,24 @@ export function createEffectChart(container, options = {}) {
       const label =
         mode === 'plasma' ? (max >= 10 ? tv.toFixed(0) : tv.toFixed(2)) : String(tv);
       ctx.fillText(label, plot.x - 8, y);
+    }
+    // Baseline. When the axis dips below zero this stops being the floor of the
+    // chart and becomes a reference the curve crosses, so it needs its own weight.
+    if (curYMin < 0) {
+      const zy = Math.round(vToY(0)) + 0.5;
+      ctx.strokeStyle = TOKENS.muted;
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(plot.x, zy);
+      ctx.lineTo(plot.x + plot.w, zy);
+      ctx.stroke();
+      ctx.save();
+      ctx.font = '10px ' + FONT_UI;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = TOKENS.muted;
+      ctx.fillText('baseline', plot.x + 4, zy - 2);
+      ctx.restore();
     }
     // Axis title — rotated, lab-notebook style.
     ctx.translate(12, plot.y + plot.h / 2);
@@ -406,7 +447,10 @@ export function createEffectChart(container, options = {}) {
       if (!pts.length) continue;
 
       const color = parseColor(s.color);
-      const baseY = plot.y + plot.h; // y == 0 line
+      // Fill down to the ZERO line, not the bottom of the plot. Once the axis
+      // opens below baseline those are different rows of pixels, and filling to
+      // the floor would shade the rebound region as if it were positive effect.
+      const baseY = vToY(0);
 
       // Clip to the reveal region (left-to-right draw-on).
       ctx.save();
@@ -670,6 +714,7 @@ export function createEffectChart(container, options = {}) {
     if (!cssW || !cssH) return;
     computePlot();
     curYMax = computeYMax(); // plasma axis fits the data (no flat-topped clipping)
+    curYMin = computeYMin(); // opens below zero only when something rebounds
     clearAll();
     const dom = timeDomain();
 

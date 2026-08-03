@@ -95,14 +95,47 @@ export function createReadoutStrip(container) {
       addStat(stats, "peak", lm.peak_min != null ? fmtTime(lm.peak_min) : "—");
       addStat(stats, "onset", lm.onset_min != null ? fmtTime(lm.onset_min) : "—");
       addStat(stats, "offset", lm.offset_min != null ? fmtTime(lm.offset_min) : "—");
+      // How long it's actually noticeable — the number people mean by "how long
+      // does it last", and the one the PD model is now fitted to.
+      if (lm.onset_min != null && lm.offset_min != null) {
+        addStat(stats, "lasts", fmtDur(lm.offset_min - lm.onset_min));
+      }
+      if (lm.rebound_min != null) {
+        addStat(stats, "crash", `${fmtTime(lm.rebound_min)} (${Math.round(lm.rebound_value)})`);
+      }
 
       const conf = document.createElement("div");
       conf.className = "readout__conf";
+      // Say WHAT the one number is. "Sedation" and "anxiety relief" are not the
+      // same experience, and a curve labelled only "felt effect" makes the
+      // reader supply the answer themselves.
+      if (mode !== "plasma" && s.channel && s.felt_kind !== "none") {
+        const ch = document.createElement("span");
+        ch.className = "readout__channel";
+        ch.textContent = s.channel;
+        ch.title = "Which single effect this curve tracks. Other effects of the same drug follow different time courses.";
+        conf.append(ch);
+      }
+      if (s.tolerance_mult && s.tolerance_mult !== 1) {
+        const tol = document.createElement("span");
+        tol.className = "readout__warn";
+        tol.textContent = s.tolerance_mult > 1 ? `tolerance ×${s.tolerance_mult.toFixed(1)}` : "no tolerance";
+        conf.append(tol);
+      }
       const cspan = document.createElement("span");
       cspan.className = `readout__confbadge readout__confbadge--${s.confidence || "low"}`;
-      cspan.textContent = `confidence: ${s.confidence || "low"}`;
-      cspan.title = "How well population data supports this curve's shape — not a measure of accuracy for you specifically.";
+      cspan.textContent = s.pd_fitted ? "fitted to published onset & duration" : `confidence: ${s.confidence || "low"}`;
+      cspan.title = s.pd_fitted
+        ? "The felt-effect shape is solved so this drug's onset and duration match published figures, rather than assigned from its class. Still an illustration, not a clinical tool."
+        : "How well population data supports this curve's shape — not a measure of accuracy for you specifically.";
       conf.append(cspan);
+      if (s.pk_short) {
+        const w = document.createElement("span");
+        w.className = "readout__warn";
+        w.textContent = "PK shorter than reported duration";
+        w.title = "The blood-level curve we were given fades before the drug is reported to stop working, so the felt duration here is the shorter of the two.";
+        conf.append(w);
+      }
       if (s.breaks_superposition) {
         const warn = document.createElement("span");
         warn.className = "readout__warn";
@@ -150,6 +183,13 @@ function fmtVal(v, mode) {
   if (v == null || isNaN(v)) return "—";
   if (mode === "plasma") return v.toFixed(2);
   return `${Math.round(v)}`;
+}
+
+function fmtDur(min) {
+  const m = Math.max(0, Math.round(min));
+  if (m < 90) return `${m}m`;
+  const h = m / 60;
+  return `${h % 1 === 0 ? h : h.toFixed(1)}h`;
 }
 
 function toHMM(min) {

@@ -7,7 +7,7 @@
 
 import { createStore } from "./state.js";
 import { releaseColor } from "./api/contract.js";
-import { computeSeries, NOISE_FLOOR_FRAC } from "./engine.js";
+import { computeSeries, FELT_FLOOR, PLASMA_FLOOR_FRAC } from "./engine.js";
 import { createSearchBar } from "./components/searchBar.js";
 import { renderSubstancePanel } from "./components/substancePanel.js";
 import { createReadoutStrip } from "./components/readoutStrip.js";
@@ -70,12 +70,14 @@ function setStatus(text) {
 // Plain-language caption under the chart: explains the axis scale and the
 // dashed threshold line so a non-clinical reader isn't left guessing. Hidden
 // until there's a curve to describe.
-function syncLegend(mode, hasData) {
+function syncLegend(mode, hasData, hasRebound) {
   if (!els.legend) return;
   els.legend.textContent =
     mode === "plasma"
-      ? "Blood level, relative to a typical dose (about 1.0 at its peak). Dashed line: the level where the effect becomes noticeable."
-      : "Felt effect from 0 (nothing) to 100 (full). Dashed line: the threshold where you start to feel it.";
+      ? "Blood level, where 1.0 is the peak of a typical dose by this drug's usual route. Switching route at the same mg changes the height — that's first-pass loss. Dashed line: the level where the effect becomes noticeable."
+      : hasRebound
+        ? "How strongly you'd notice it, 0–100, scaled to this drug (a typical dose peaks near 70). Below zero is rebound — your baseline has drifted past the drug, which is what the crash is."
+        : "How strongly you'd notice it, 0–100, scaled to this drug — a typical dose peaks near 70, so a bigger dose has somewhere to go. Dashed line: the threshold where you start to feel it.";
   els.legend.hidden = !hasData;
 }
 
@@ -130,22 +132,29 @@ function windowStartFor(state) {
   return Math.floor(Math.min(DAY_START, Math.max(0, earliest - 30)) / 30) * 30;
 }
 
-// Last grid minute where any visible felt curve is still meaningfully above
-// baseline (above NOISE_FLOOR_FRAC of its own peak). This sizes the window from
-// the ACTUAL computed curve, not a static landmark, so long-acting drugs don't
-// get clipped. Uses the SAME threshold as the offset landmark (engine.js) so the
-// two never disagree — see NOISE_FLOOR_FRAC.
-function activeEndMin(probe) {
+// Last grid minute still worth showing, computed from the ACTUAL curve rather
+// than a static landmark so long-acting drugs don't get clipped.
+//
+// The two modes need different definitions and used to share one. Felt effect
+// has a real perceptual floor (FELT_FLOOR, the same constant the offset landmark
+// and the PD fit use, so none of the three can disagree). Blood level has no
+// such floor, so it falls back to a fraction of its own peak — which is why
+// plasma mode can legitimately run for days on a drug like diazepam while the
+// felt curve is done in five hours. Showing that gap IS the point.
+function activeEndMin(probe, mode) {
   const g = probe.grid_min;
   if (!g.length) return 0;
   let lastIdx = 0;
   for (const s of probe.series) {
     if (s.muted) continue;
+    const arr = mode === "plasma" ? s.concentration : s.felt_effect;
+    if (!arr) continue;
     let peak = 0;
-    for (const v of s.felt_effect) if (v > peak) peak = v;
-    const cut = Math.max(1, NOISE_FLOOR_FRAC * peak);
+    for (const v of arr) if (v > peak) peak = v;
+    const cut = mode === "plasma" ? Math.max(1e-6, PLASMA_FLOOR_FRAC * peak)
+                                  : (peak >= 2 * FELT_FLOOR ? FELT_FLOOR : 0.2 * peak);
     for (let i = g.length - 1; i > lastIdx; i--) {
-      if (s.felt_effect[i] > cut) { lastIdx = i; break; }
+      if (arr[i] > cut) { lastIdx = i; break; }
     }
   }
   return g[lastIdx];
@@ -158,7 +167,7 @@ function computeWindow(state) {
   const probe = computeSeries(state.substances, {
     start, end_min: start + MAX_SPAN, step_min: PROBE_STEP,
   });
-  let span = activeEndMin(probe) + 45 - start;
+  let span = activeEndMin(probe, state.mode) + 45 - start;
   if (span <= 0) span = MIN_SPAN;
   if (span > DAY) span = Math.ceil(span / DAY) * DAY;          // 24h steps
   else span = Math.max(MIN_SPAN, Math.ceil(span / 30) * 30);   // tidy short fit
@@ -208,6 +217,9 @@ function recompute(state) {
 
   readout.setMutedIds(state.substances.filter((s) => s.muted).map((s) => s.id));
   readout.setSeries(result.series.filter((s) => !s.muted), state.mode);
+
+  const hasRebound = result.series.some((s) => !s.muted && s.landmarks && s.landmarks.rebound_value != null);
+  syncLegend(state.mode, true, hasRebound);
 }
 
 function scheduleRecompute(state) {
@@ -222,7 +234,7 @@ store.subscribe((state) => {
   syncModeButtons(state.mode);
   const hasCurve = state.substances.length > 0 && state.substances.some((s) => s.doses.length > 0);
   if (els.empty) els.empty.hidden = hasCurve;
-  syncLegend(state.mode, hasCurve);
+  syncLegend(state.mode, hasCurve, false);
   // debounced recompute
   scheduleRecompute(state);
 });
@@ -237,4 +249,4 @@ reducedMotionMQ.addEventListener?.("change", () => {
 renderSubstancePanel(els.panel, store.getState(), store, { onRemove: removeSubstance });
 syncModeButtons("felt");
 if (els.empty) els.empty.hidden = false;
-syncLegend("felt", false);
+syncLegend("felt", false, false);

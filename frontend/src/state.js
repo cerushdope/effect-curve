@@ -4,6 +4,8 @@
 // the felt/plasma mode. Subscribers are notified on any mutation; the app uses
 // that to re-render (immediately) and to recompute (debounced ~250ms).
 
+import { DEFAULT_CONDITIONS } from "./engine.js";
+
 /**
  * @typedef {Object} ActiveSubstance
  * @property {string} id            substance_id
@@ -49,7 +51,11 @@ export function createStore() {
 
   function snapshot() {
     return {
-      substances: substances.map((s) => ({ ...s, doses: s.doses.map((d) => ({ ...d })) })),
+      substances: substances.map((s) => ({
+        ...s,
+        conditions: { ...s.conditions },
+        doses: s.doses.map((d) => ({ ...d })),
+      })),
       window: { ...win },
       now_min,
       mode,
@@ -78,6 +84,10 @@ export function createStore() {
         facts: sub.facts || null,
         routeId: sub.routeId || "",
         unit: sub.unit || "mg",
+        // Applied automatically on the first paint, then editable on the card.
+        // The alternative — asking ten questions before drawing anything — is a
+        // worse trade for a tool whose whole appeal is "type a name, see a curve".
+        conditions: { ...DEFAULT_CONDITIONS, ...(sub.conditions || {}) },
         doses: sub.doses && sub.doses.length
           ? sub.doses
           : [{ id: nextRowId(), dose_mg: sub.defaultDose ?? 0, time_min: 480 }], // default 08:00
@@ -96,6 +106,18 @@ export function createStore() {
       s.facts = facts;
       if (routeId) s.routeId = routeId;
       if (unit) s.unit = unit;
+      notify();
+    },
+    setCondition(id, patch) {
+      const s = substances.find((x) => x.id === id);
+      if (!s) return;
+      s.conditions = { ...s.conditions, ...patch };
+      notify();
+    },
+    setRoute(id, routeId) {
+      const s = substances.find((x) => x.id === id);
+      if (!s || !routeId) return;
+      s.routeId = routeId;
       notify();
     },
     toggleMute(id) {

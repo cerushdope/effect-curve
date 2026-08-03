@@ -643,3 +643,64 @@ html, body {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---- condition chips ------------------------------------------------------ */
+/* The two assumptions the curve is drawn under, shown as their current answer
+   rather than asked as a question. Clicking cycles to the next option. */
+.chiprow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+.chiprow__label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.chip {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+.chip:hover { color: var(--ink); border-color: var(--muted); }
+.chip:focus-visible { outline: 2px solid var(--card-color, var(--accent)); outline-offset: 1px; }
+/* A chip left on its default reads as quiet context; one the user has changed
+   reads as an active setting. */
+.chip.is-set {
+  color: var(--ink);
+  border-color: var(--card-color, var(--accent));
+  background: color-mix(in srgb, var(--card-color, var(--accent)) 8%, transparent);
+}
+.chip--select { cursor: pointer; padding-right: 6px; }
+
+.card__sub--dim { opacity: 0.75; font-style: italic; }
+
+/* Shown instead of a curve for drugs where a felt-effect line would be made up. */
+.card__nofelt {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  border-left: 2px solid var(--hairline);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.readout__channel {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--row-color, var(--accent)) 14%, transparent);
+}

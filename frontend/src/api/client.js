@@ -10,6 +10,7 @@
 // so the UI is demoable with no network at all.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { applyPkFix } from "../data/felt.js";
 
 /** @typedef {import("./contract.js").SubstanceSummary} SubstanceSummary */
 /** @typedef {import("./contract.js").Substance} Substance */
@@ -58,12 +59,16 @@ export async function search(q) {
  * @returns {Promise<Substance>}
  */
 export async function getSubstance(id) {
-  if (mockEnabled()) return (await mock()).getSubstance(id);
+  if (mockEnabled()) return applyPkFix((await mock()).getSubstance(id));
   const { data, error } = await supabase
     .from("substances")
     .select("record")
     .eq("id", id)
     .single();
   if (error) throw new ApiError(error.message, { cause: error });
-  return data.record;
+  // A handful of records have PK that is demonstrably wrong or structurally
+  // incomplete (an XR Tmax applied to the IR route, a single-exponential
+  // decline where the felt effect tracks the distribution phase). Patched here,
+  // at the data layer, so the engine still only ever sees plain parameters.
+  return applyPkFix(data.record);
 }
