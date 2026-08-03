@@ -25,6 +25,26 @@ await mkdir(dest, { recursive: true });
 await cp(join(src, "index.html"), join(dest, "index.html"));
 await cp(join(src, "src"), join(dest, "src"), { recursive: true });
 
+// ---- strip anything that only exists for the web build --------------------- //
+// Blocks marked BUILD:STRIP-* are deleted from the package. Right now that is
+// exactly one block: the dynamic import of the Supabase SDK from a CDN, which
+// the extension never reaches but which would still show up in a reviewer's
+// grep for remote code. Declaring "no remote code" should be verifiable by
+// reading the upload, not by reasoning about which branch runs.
+{
+  const clientPath = join(dest, "src", "api", "client.js");
+  const before = await readFile(clientPath, "utf8");
+  const after = before.replace(
+    /[ \t]*\/\/ BUILD:STRIP-START[\s\S]*?\/\/ BUILD:STRIP-END[ \t]*\n/g,
+    "  _sdk = false; // SDK path stripped from the extension build\n",
+  );
+  if (after === before) {
+    console.error("Extension build failed: BUILD:STRIP markers not found in client.js.");
+    process.exit(1);
+  }
+  await writeFile(clientPath, after);
+}
+
 // ---- guard the MV3 rules --------------------------------------------------- //
 // These two mistakes are silent: the panel just renders blank with a CSP error
 // buried in a devtools console most people never open for an extension page.
@@ -37,8 +57,11 @@ if (/(?:src|href)="\//.test(html)) {
   problems.push('index.html has a root-absolute path ("/…") — an extension page has no site root.');
 }
 for (const [file, text] of await readAll(join(dest, "src"))) {
-  if (/from\s+["']https?:\/\//.test(text)) {
-    problems.push(`${file} statically imports remote code — MV3 forbids it. Use a dynamic import with a fallback.`);
+  // Catches dynamic import("https://…") too, not just static `from "https://…"`.
+  // The earlier version only checked the static form, which is how a live remote
+  // import survived into the package unnoticed.
+  if (/\bimport\s*\(\s*["'`]https?:\/\//.test(text) || /from\s+["']https?:\/\//.test(text)) {
+    problems.push(`${file} imports remote code — MV3 forbids it, and it makes the "no remote code" declaration false.`);
   }
   if (/from\s+["']\//.test(text)) {
     problems.push(`${file} has a root-absolute import.`);

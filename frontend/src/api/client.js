@@ -8,12 +8,16 @@
 //
 // TWO TRANSPORTS
 //
-// The SDK is loaded from esm.sh at runtime, which is fine on the web and
-// impossible in a Chrome extension: Manifest V3 forbids remotely-hosted code,
+// The WEB build loads the Supabase SDK from a CDN at runtime. That is
+// impossible in a Chrome extension: Manifest V3 forbids remotely-hosted code
 // and the extension page's CSP blocks the import outright. Rather than fork the
 // client, we try the SDK and fall back to plain fetch against the same
 // PostgREST endpoints. The REST path has no dependencies and works everywhere —
 // including from Node, which is how tools/validate.mjs talks to the same data.
+//
+// The EXTENSION build contains no CDN reference at all: tools/build-extension.mjs
+// deletes the SDK branch when packaging, so "no remote code" is true by
+// inspection of the upload rather than by tracing which branch executes.
 //
 // Supabase reflects the caller's Origin in Access-Control-Allow-Origin,
 // including `chrome-extension://…`, so the fallback needs NO host permission in
@@ -45,6 +49,15 @@ async function sdk() {
     _sdk = false;
     return _sdk;
   }
+  // BUILD:STRIP-START — removed from the extension package.
+  //
+  // The line below is the only remote reference in the codebase, and it is
+  // already unreachable in an extension (remoteImportBlocked returns true
+  // above). But "unreachable" is not "absent": a Web Store reviewer grepping
+  // the package for esm.sh would find it and reasonably ask why an extension
+  // that declares no remote code ships a remote import. tools/build-extension.mjs
+  // deletes this block from the packaged copy, so the answer to that question is
+  // not "trust the control flow" — the string simply isn't in the upload.
   try {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     _sdk = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -53,6 +66,7 @@ async function sdk() {
     console.warn("Supabase SDK unavailable, using REST transport.", e && e.message);
     _sdk = false;
   }
+  // BUILD:STRIP-END
   return _sdk;
 }
 

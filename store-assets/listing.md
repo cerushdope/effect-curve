@@ -9,7 +9,11 @@ See how long a dose actually lasts — a felt-effect curve over time, fitted to 
 (107 characters, under the 132 limit.)
 
 ## Category
-Productivity
+Well-being
+
+Chrome's category list was renamed; "Productivity" no longer exists. Well-being
+is the health/medical bucket. If a subcategory is offered, pick the health or
+medical one. Second choice would be Tools, but that undersells what it is.
 
 ## Language
 English (United States)
