@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Effect Curve</title>
+<meta name="description" content="Privacy policy for the Effect Curve web app and Chrome extension." />
+<style>
+  :root { --ink:#1A1D21; --muted:#6A7078; --hairline:#E4E5E1; --paper:#F7F7F4; --accent:#2E4D54; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.65 Inter, "Helvetica Neue", system-ui, sans-serif;
+  }
+  main { max-width: 68ch; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.1rem; margin: 2.4rem 0 .6rem; letter-spacing: -.005em; }
+  .sub { color: var(--muted); margin: 0 0 2.2rem; }
+  .mark {
+    display:inline-block; width:16px; height:16px; border-radius:4px;
+    background: var(--accent); vertical-align:-2px; margin-right:.5rem;
+  }
+  p, li { color: #2A2E33; }
+  ul { padding-left: 1.15rem; }
+  li { margin: .3rem 0; }
+  code {
+    font: 13px/1.4 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    background: #EDEEEA; padding: .1em .35em; border-radius: 3px;
+  }
+  .lede {
+    border-left: 3px solid var(--accent); padding: .9rem 1.1rem;
+    background: #fff; margin: 0 0 2rem; border-radius: 0 6px 6px 0;
+  }
+  .lede strong { display:block; font-size:1.05rem; margin-bottom:.2rem; }
+  footer {
+    border-top: 1px solid var(--hairline); margin-top: 3rem; padding-top: 1.2rem;
+    color: var(--muted); font-size: .875rem;
+  }
+  a { color: var(--accent); }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#EDEEEA; --muted:#9AA1A8; --hairline:#2C3136; --paper:#16191C; }
+    body { background: var(--paper); color: var(--ink); }
+    p, li { color: #D3D7DB; }
+    code { background: #22262A; }
+    .lede { background: #1C2024; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="mark" aria-hidden="true"></span>Privacy Policy</h1>
+  <p class="sub">Effect Curve — web app and Chrome extension. Last updated 4 August 2026.</p>
+
+  <div class="lede">
+    <strong>Effect Curve collects nothing.</strong>
+    There are no accounts, no analytics, no cookies, no tracking, and no advertising.
+    Nothing you type is transmitted or saved anywhere.
+  </div>
+
+  <h2>What you enter</h2>
+  <p>
+    The substances, doses and times you enter exist only in your browser tab's memory.
+    They are never sent over the network and never written to disk. Closing or reloading
+    the tab discards them — which is also why the app cannot show you yesterday's chart.
+    The curve is calculated entirely inside your browser.
+  </p>
+
+  <h2>The one network request</h2>
+  <p>
+    When you search for a substance, the app queries a read-only
+    <a href="https://supabase.com" rel="noopener">Supabase</a> database for that substance's
+    published parameters — peak time, half-life, and so on. The search term you type is part
+    of that request.
+  </p>
+  <p>
+    Like any web request, it carries your IP address, and Supabase may retain it in ordinary
+    server logs. See
+    <a href="https://supabase.com/privacy" rel="noopener">Supabase's privacy policy</a>.
+    Your doses and times are <em>not</em> part of this request — the database is only ever
+    asked about the substance, never about you.
+  </p>
+
+  <h2>Local storage</h2>
+  <ul>
+    <li><strong>Chrome extension:</strong> nothing is stored. It talks to the database over
+      plain <code>fetch</code> and uses no storage APIs at all.</li>
+    <li><strong>Web version:</strong> the Supabase client library writes one anonymous
+      key to <code>localStorage</code> (named <code>sb-…-auth-token</code>). It is created by
+      the library's session handling even though the app has no login, contains no personal
+      information, and is never read by us. Clearing site data removes it.</li>
+  </ul>
+
+  <h2>Third parties</h2>
+  <ul>
+    <li><strong>Supabase</strong> — hosts the substance database. Receives your search terms
+      and IP address.</li>
+    <li><strong>esm.sh</strong> — a CDN the <em>web version only</em> loads the Supabase client
+      library from, which means that CDN sees your IP. The Chrome extension does not contact it:
+      Manifest V3 forbids remotely-hosted code, so the extension uses a built-in path instead.</li>
+  </ul>
+  <p>No data is sold, shared, or used for advertising. There is nothing collected to sell.</p>
+
+  <h2>Chrome extension permissions</h2>
+  <p>
+    The extension requests one permission, <code>sidePanel</code>, which lets it draw in
+    Chrome's side panel. It does <strong>not</strong> request access to the pages you visit,
+    your browsing history, your tabs, or your bookmarks. It cannot read the page you are
+    looking at.
+  </p>
+
+  <h2>Children</h2>
+  <p>Effect Curve is not directed at children under 13 and collects no data from anyone.</p>
+
+  <h2>Changes</h2>
+  <p>
+    If this policy changes, the date above changes with it, and the history is public in the
+    project's Git repository.
+  </p>
+
+  <h2>Not medical advice</h2>
+  <p>
+    Effect Curve draws illustrative estimates from published population figures. It is not a
+    dosing tool, not a clinical tool, and not a substitute for advice from a qualified
+    professional. Do not use it to make decisions about medication.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this policy: <a href="mailto:REPLACE-WITH-YOUR-EMAIL">REPLACE-WITH-YOUR-EMAIL</a>,
+    or open an issue at
+    <a href="https://github.com/cerushdope/effect-curve" rel="noopener">github.com/cerushdope/effect-curve</a>.
+  </p>
+
+  <footer>
+    Effect Curve is open source. Everything described above is verifiable in the code at
+    <a href="https://github.com/cerushdope/effect-curve" rel="noopener">github.com/cerushdope/effect-curve</a>.
+  </footer>
+</main>
+</body>
+</html>

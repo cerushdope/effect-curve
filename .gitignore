@@ -22,4 +22,4 @@ ingest/.cache/
 
 # Chrome extension build output — regenerate with `node tools/build-extension.mjs`
 extension/app/
-extension/icons/
+
