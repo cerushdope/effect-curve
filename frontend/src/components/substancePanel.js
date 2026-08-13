@@ -6,6 +6,7 @@
 import { brandLabels } from "../aliasLabels.js";
 import { renderDoseRows } from "./doseRows.js";
 import { FOOD_LEVELS, TOLERANCE_LEVELS, feltFor, foodAffects } from "../data/felt.js";
+import { typicalPeakMin, terminalHalfLifeMin } from "../engine.js";
 
 // The two inputs that move the curve most, after dose and time. They are
 // APPLIED BY DEFAULT and shown here as the current answer — the user never has
@@ -85,13 +86,17 @@ export function renderSubstancePanel(container, state, store, opts = {}) {
     actions.append(mute, remove);
     head.append(swatch, title, actions);
 
-    // compact subtitle: formulation · peak · half-life (deliberately minimal)
-    const lm = sub.facts?.landmarks || {};
-    const route = sub.facts?.routes?.[0] || null;
+    // compact subtitle: formulation · peak · half-life (deliberately minimal).
+    // Derived from the same engine that draws the curve — the SELECTED route
+    // with PK_FIX applied, and "peaks ~" is the drawn curve's peak, so it
+    // agrees with the readout's "peak" instead of quoting raw label Tmax.
+    const route = (sub.facts?.routes || []).find((r) => r.id === sub.routeId) || sub.facts?.routes?.[0] || null;
     const bits = [];
     if (route?.formulation) bits.push(route.formulation);
-    if (lm.tmax_min?.value != null) bits.push(`peaks ~${fmtMin(lm.tmax_min.value)}`);
-    if (lm.half_life_min?.value != null) bits.push(`t½ ${fmtMin(lm.half_life_min.value)}`);
+    const peakMin = sub.facts ? typicalPeakMin(sub) : null;
+    if (peakMin != null) bits.push(`peaks ~${fmtMin(peakMin)}`);
+    const hlMin = sub.facts ? terminalHalfLifeMin(sub) : null;
+    if (hlMin != null) bits.push(`t½ ${fmtMin(hlMin)}`);
     const facts = document.createElement("p");
     facts.className = "card__sub";
     facts.textContent = bits.join(" · ");

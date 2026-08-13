@@ -1,6 +1,7 @@
 {
   "name": "effect-curve",
   "version": "1.0.0",
+  "type": "module",
   "description": "Log what you took, how much, and when — see a clean graph of **felt effect over time** (onset → rise → peak/plateau → offset → baseline) for each substance on a shared timeline.",
   "main": "index.js",
   "directories": {

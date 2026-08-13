@@ -638,6 +638,52 @@ function routeOf(sub) {
   return routes.find((r) => r.id === sub.routeId) || routes[0];
 }
 
+// ---------------------------------------------------------------------------- //
+// Card-subtitle facts.                                                         //
+// ---------------------------------------------------------------------------- //
+// The subtitle used to read the scraped record landmarks, which lied twice:
+// PK_FIX never reaches them (dextroamphetamine IR showed the Spansule's 8 h
+// Tmax while the curve peaked at 3 h), and "peaks ~" was blood-level Tmax while
+// the readout's "peak" is the felt curve — two quantities under one word, so a
+// dose at 08:00 said "peaks ~3.5 h" up top and "peak 12:20" below. Both numbers
+// now come from the same simulation the chart draws.
+
+/** Minutes from dose to the peak of the curve the app actually draws for this
+ *  substance (felt; blood level when we refuse a felt curve), at one typical
+ *  dose of the selected route under the current conditions. */
+export function typicalPeakMin(sub) {
+  const route = routeOf(sub);
+  if (!route) return null;
+  const dose_mg = (route.dose_range && route.dose_range.typical) || route.dose_ref;
+  const probe = { ...sub, doses: [{ time_min: 0, dose_mg }] };
+  // 48 h covers oral drugs; the retry span is for multi-day shapes like patches.
+  for (const end of [2880, 10080]) {
+    const { grid_min, series } = computeSeries([probe], { start: 0, end_min: end, step_min: 5 });
+    const s = series[0];
+    if (!s) return null;
+    const arr = s.felt_kind === "none" ? s.concentration : s.felt_effect;
+    let pk = 0;
+    for (let i = 1; i < arr.length; i++) if (arr[i] > arr[pk]) pk = i;
+    if (!(arr[pk] > 0)) return null;
+    if (pk < arr.length - 1) return grid_min[pk];
+  }
+  return null; // still climbing at 7 days — no honest peak to report
+}
+
+/** Terminal half-life of the selected route's active moiety, after PK_FIX. */
+export function terminalHalfLifeMin(sub) {
+  const route = routeOf(sub);
+  if (!route) return null;
+  const comps = route.pk_components || [];
+  const comp = comps.find((c) => c.is_active_moiety !== false) || comps[0];
+  if (!comp || !comp.decline) return null;
+  const p = comp.decline.params || {};
+  if (comp.decline.type === "saturable") return p.fallback_half_life_min || null;
+  if (p.half_life_min != null) return p.half_life_min;
+  if (p.half_life1_min != null) return Math.max(p.half_life1_min, p.half_life2_min || 0);
+  return null;
+}
+
 /**
  * Build per-substance felt/concentration series from the cached params.
  * @param {Array} substances  active substances (each with .facts, .doses, .color, .muted, .conditions)
