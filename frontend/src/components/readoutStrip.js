@@ -20,7 +20,7 @@ export function createReadoutStrip(container) {
   headLabel.textContent = "Readout";
   const headTime = document.createElement("span");
   headTime.className = "readout__time mono";
-  headTime.textContent = "peak";
+  headTime.textContent = "at peak";
   head.append(headLabel, headTime);
 
   const list = document.createElement("div");
@@ -63,7 +63,7 @@ export function createReadoutStrip(container) {
       for (const v of scrub.values) scrubMap.set(v.substance_id, v.value);
       headTime.textContent = `at ${fmtTime(scrub.time_min)}`;
     } else {
-      headTime.textContent = "peak"; // resting view shows each substance's peak
+      headTime.textContent = "at peak"; // resting view shows each substance's peak
     }
 
     for (const s of visible) {
@@ -92,16 +92,24 @@ export function createReadoutStrip(container) {
 
       const stats = document.createElement("dl");
       stats.className = "readout__stats mono";
-      addStat(stats, "peak", lm.peak_min != null ? fmtTime(lm.peak_min) : "—");
-      addStat(stats, "onset", lm.onset_min != null ? fmtTime(lm.onset_min) : "—");
-      addStat(stats, "offset", lm.offset_min != null ? fmtTime(lm.offset_min) : "—");
+      // Plain-language landmarks, all clock times: "onset"/"offset" made people
+      // parse jargon, and "peak" next to the card's "peaks ~4.3 h" looked like a
+      // contradiction (one is a clock time, the other is time-after-dose).
+      addStat(stats, "kicks in", lm.onset_min != null ? fmtTime(lm.onset_min) : "—",
+        "When you'd first notice it (clock time).");
+      addStat(stats, "strongest", lm.peak_min != null ? fmtTime(lm.peak_min) : "—",
+        "When the effect is at its peak (clock time).");
+      addStat(stats, "wears off", lm.offset_min != null ? fmtTime(lm.offset_min) : "—",
+        "When it stops being noticeable (clock time).");
       // How long it's actually noticeable — the number people mean by "how long
       // does it last", and the one the PD model is now fitted to.
       if (lm.onset_min != null && lm.offset_min != null) {
-        addStat(stats, "lasts", fmtDur(lm.offset_min - lm.onset_min));
+        addStat(stats, "lasts", fmtDur(lm.offset_min - lm.onset_min),
+          "How long it's noticeable: wears off minus kicks in.");
       }
       if (lm.rebound_min != null) {
-        addStat(stats, "crash", `${fmtTime(lm.rebound_min)} (${Math.round(lm.rebound_value)})`);
+        addStat(stats, "crash", `${fmtTime(lm.rebound_min)} (${Math.round(lm.rebound_value)})`,
+          "The dip below your normal baseline after it wears off, and how deep it goes.");
       }
 
       const conf = document.createElement("div");
@@ -166,11 +174,12 @@ export function createReadoutStrip(container) {
   };
 }
 
-function addStat(dl, term, value) {
+function addStat(dl, term, value, title) {
   // Each label+value is one inline unit so it wraps together (never splits or
   // overflows into the neighbouring readout box on narrow/scaled screens).
   const wrap = document.createElement("div");
   wrap.className = "readout__stat";
+  if (title) wrap.title = title;
   const dt = document.createElement("dt");
   dt.textContent = term;
   const dd = document.createElement("dd");

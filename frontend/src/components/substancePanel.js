@@ -96,10 +96,13 @@ export function renderSubstancePanel(container, state, store, opts = {}) {
     const peakMin = sub.facts ? typicalPeakMin(sub) : null;
     if (peakMin != null) bits.push(`peaks ~${fmtMin(peakMin)} after dose`);
     const hlMin = sub.facts ? terminalHalfLifeMin(sub) : null;
-    if (hlMin != null) bits.push(`t½ ${fmtMin(hlMin)}`);
+    if (hlMin != null) bits.push(`half-life ${fmtMin(hlMin)}`);
     const facts = document.createElement("p");
     facts.className = "card__sub";
     facts.textContent = bits.join(" · ");
+    facts.title =
+      "Peak: when the drawn curve is strongest, counted from when you take it. " +
+      "Half-life: how fast the blood level falls by half — the felt effect usually ends sooner.";
 
     // Brand names. The card titles the generic (one substance, one curve), so
     // without this someone who added "Vyvanse" has no confirmation they got it.

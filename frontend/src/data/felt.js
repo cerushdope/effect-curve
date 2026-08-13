@@ -276,7 +276,7 @@ export const PK_FIX = {
   // conversion, and "immediate-release" on the card reads as a claim about the
   // experience. The PK cascade itself is right; only the label is wrong.
   lisdexamfetamine: {
-    oral_IR: { formulation: "oral prodrug" },
+    oral_IR: { formulation: "long-acting oral (prodrug)" },
   },
 
   // Single-exponential decline at t½ 51 h describes diazepam's TERMINAL phase.

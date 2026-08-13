@@ -37,7 +37,7 @@ async function check(label) {
   const rows = await page.$$eval('.readout__row', (els) => els.map((e) => e.innerText.replace(/\n+/g, ' ')));
   for (let i = 0; i < cards.length; i++) {
     const subPeakH = parseH(cards[i].sub, /peaks ~([\d.]+) (h|min)/);
-    const peakClock = (rows[i] || '').match(/peak\s+(\d{2}):(\d{2})/i);
+    const peakClock = (rows[i] || '').match(/strongest\s+(\d{2}):(\d{2})/i);
     const [dh, dm] = cards[i].time.split(':').map(Number);
     let ok = '??';
     if (subPeakH != null && peakClock && cards[i].time) {
