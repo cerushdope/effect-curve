@@ -94,7 +94,7 @@ export function renderSubstancePanel(container, state, store, opts = {}) {
     const bits = [];
     if (route?.formulation) bits.push(route.formulation);
     const peakMin = sub.facts ? typicalPeakMin(sub) : null;
-    if (peakMin != null) bits.push(`peaks ~${fmtMin(peakMin)}`);
+    if (peakMin != null) bits.push(`peaks ~${fmtMin(peakMin)} after dose`);
     const hlMin = sub.facts ? terminalHalfLifeMin(sub) : null;
     if (hlMin != null) bits.push(`t½ ${fmtMin(hlMin)}`);
     const facts = document.createElement("p");

@@ -271,6 +271,14 @@ export const PK_FIX = {
     patch: { zero_order_window_min: 540 },
   },
 
+  // The ingest filed Vyvanse's only route as "immediate-release oral" — the
+  // capsule does release immediately, but what makes it slow is the prodrug
+  // conversion, and "immediate-release" on the card reads as a claim about the
+  // experience. The PK cascade itself is right; only the label is wrong.
+  lisdexamfetamine: {
+    oral_IR: { formulation: "oral prodrug" },
+  },
+
   // Single-exponential decline at t½ 51 h describes diazepam's TERMINAL phase.
   // What you feel tracks the distribution phase (~1 h), which is why acute
   // anxiolysis is 4–6 h despite the drug being measurable for days. This is the
@@ -339,6 +347,7 @@ export function applyPkFix(record) {
   for (const route of record.routes) {
     const f = fix[route.id] || fix._;
     if (!f) continue;
+    if (f.formulation) route.formulation = f.formulation;
     const comps = route.pk_components || [];
     const base = comps.find((c) => c.is_active_moiety !== false) || comps[0];
     if (!base) continue;
